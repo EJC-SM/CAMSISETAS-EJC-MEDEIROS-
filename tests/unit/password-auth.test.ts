@@ -1,3 +1,11 @@
+/**
+ * @vitest-environment node
+ *
+ * Usa o ambiente Node (não jsdom): estes testes exercitam o WebCrypto de
+ * `node:crypto`, que valida os buffers contra as classes nativas do Node. Sob
+ * jsdom, ArrayBuffer/Uint8Array vêm de outro realm e o salt do PBKDF2 é
+ * rejeitado ("not instance of ArrayBuffer"). Não há uso de DOM aqui.
+ */
 import { describe, expect, it } from 'vitest';
 import { deriveKeyFromPassword, validatePasswordPolicy } from '../../src/utils/password-auth';
 

@@ -1,3 +1,10 @@
+/**
+ * @vitest-environment node
+ *
+ * Ambiente Node (não jsdom): além de exercitar handlers CJS da API, este arquivo
+ * deriva chave via WebCrypto (`deriveKeyFromPassword`). Sob jsdom os buffers vêm
+ * de outro realm e o WebCrypto do Node rejeita o salt do PBKDF2. Sem uso de DOM.
+ */
 import { createRequire } from 'node:module';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { deriveKeyFromPassword } from '../../src/utils/password-auth';
