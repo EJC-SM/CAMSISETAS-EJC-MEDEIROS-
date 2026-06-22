@@ -1,0 +1,22 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "doacoes": {
+      ".read": true,
+      "etapa1": { ".read": true, ".write": false },
+      "etapa2": { ".read": true, ".write": false }
+    },
+    "config": { ".read": true, ".write": false },
+    "auth": { ".read": false, ".write": false },
+
+    "camisetas": {
+      ".read": false,
+      ".write": false,
+      "config": { ".read": true, ".write": false },
+      "pedidos": { ".read": false, ".write": false },
+      "auth": { ".read": false, ".write": false }
+    }
+  }
+}
