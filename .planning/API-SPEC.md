@@ -5,7 +5,8 @@ mesmas rotas localmente despachando para os mesmos handlers. Todas as respostas 
 headers de segurança e `Cache-Control: no-store`.
 
 Storage: com `FIREBASE_DATABASE_URL` definido → Realtime Database sob `camisetas/`;
-sem ele → modo memória (dev/E2E).
+sem ele → modo memória (dev/E2E). A única leitura **fora** desse namespace é o `config`
+global na raiz (`/config`), usado para resolver a trava de etapa (ver `etapa_locked` abaixo).
 
 ## Convenções
 
@@ -24,6 +25,14 @@ Config pública do Firebase para o cliente (sem secret). 500 se faltar env.
 ### `GET /api/config?etapa=1|2`  — público
 Retorna `{ etapa, data }` com catálogo mesclado aos defaults:
 `{ produtos, cores, equipes, nome_evento, logo, pix_chave, pix_nome, pix_cidade, pix_qr, prazo, etapa_locked }`.
+
+> **Trava de etapa (`etapa_locked`)**: a fonte de verdade é o `config` **global** na raiz do
+> banco (`/config.etapa_locked`), compartilhado com o app de doações. O `etapa_locked` salvo em
+> `camisetas/config` é usado apenas como **fallback** quando o global não tiver valor (ex.: modo
+> memória em dev/testes). O `GET /api/config` já entrega o valor resolvido (global → fallback), e o
+> `POST /api/pedidos` aplica a mesma resolução ao bloquear pedidos fora da etapa liberada. Valores
+> válidos: `0` (sem trava), `1` ou `2`. O painel do camisetas ainda escreve o `etapa_locked` local,
+> que só vale como fallback.
 
 ### `PUT /api/config`  — papel por campo
 Body: `{ etapa, ...campos }`. Campos `prazo`/`etapa_locked` = **coordenador**;

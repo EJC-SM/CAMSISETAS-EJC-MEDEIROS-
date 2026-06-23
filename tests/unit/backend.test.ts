@@ -6,7 +6,7 @@
  * de outro realm e o WebCrypto do Node rejeita o salt do PBKDF2. Sem uso de DOM.
  */
 import { createRequire } from 'node:module';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { deriveKeyFromPassword } from '../../src/utils/password-auth';
 
 const require = createRequire(import.meta.url);
@@ -14,8 +14,26 @@ const require = createRequire(import.meta.url);
 // Modulos CJS da API (api/package.json -> type commonjs). createRequire respeita
 // a resolucao do Node e evita atrito ESM/CJS no Vite.
 const firebase = require('../../api/_firebase.js');
+const firebaseRest = require('../../api/firebase-rest.cjs');
 const password = require('../../api/password.js');
 const catalogo = require('../../api/catalogo-defaults.cjs');
+const pedidosHandler = require('../../api/pedidos.js');
+
+function mockRes() {
+  return {
+    statusCode: 200,
+    body: null as unknown,
+    setHeader() {},
+    status(code: number) {
+      this.statusCode = code;
+      return this;
+    },
+    json(payload: unknown) {
+      this.body = payload;
+      return this;
+    },
+  };
+}
 
 beforeAll(() => {
   process.env.FIREBASE_DATABASE_URL = '';
@@ -99,6 +117,43 @@ describe('catalogo-defaults', () => {
   it('buildConfigPayload entrega equipes da etapa', () => {
     const payload = catalogo.buildConfigPayload({}, 2);
     expect(payload.equipes).toContain('Gesto Concreto');
+  });
+});
+
+describe('trava de etapa via config externo (/config global)', () => {
+  afterEach(() => {
+    firebaseRest.resetMemoryStore();
+  });
+
+  it('o config externo precede o camisetas (trava)', async () => {
+    await firebaseRest.dbSetExternal('config', { etapa_locked: 2 });
+    // mesmo com o camisetas destravado, o externo manda
+    expect(await firebase.resolveEtapaLock({ etapa_locked: 0 })).toBe(2);
+  });
+
+  it('o config externo precede o camisetas (destrava)', async () => {
+    await firebaseRest.dbSetExternal('config', { etapa_locked: 0 });
+    // o camisetas pedia trava 1, mas o externo destrava
+    expect(await firebase.resolveEtapaLock({ etapa_locked: 1 })).toBe(0);
+  });
+
+  it('sem config externo, usa o etapa_locked do camisetas (fallback)', async () => {
+    expect(await firebase.resolveEtapaLock({ etapa_locked: 1 })).toBe(1);
+    expect(await firebase.resolveEtapaLock({ etapa_locked: 0 })).toBe(0);
+  });
+
+  it('createPedido bloqueia (409) quando o externo trava outra etapa', async () => {
+    await firebaseRest.dbSetExternal('config', { etapa_locked: 2 });
+    const req = {
+      method: 'POST',
+      headers: {},
+      socket: { remoteAddress: 'unit-test' },
+      body: { etapa: 1, nome: 'Maria', tel: '(11) 98888-7777', equipe: 'Cozinha', itens: [] },
+    };
+    const res = mockRes();
+    await pedidosHandler(req, res);
+    expect(res.statusCode).toBe(409);
+    expect((res.body as { error?: string })?.error).toBe('etapa_locked');
   });
 });
 

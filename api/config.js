@@ -5,13 +5,17 @@ const {
   applySecurityHeaders,
   isRateLimited,
   requireConfigUpdateAccess,
+  resolveEtapaLock,
 } = require('./_firebase');
 const { defaultConfig, buildConfigPayload, applyConfigUpdate } = require('./catalogo-defaults.cjs');
 
 async function getConfig(req, res) {
   const etapa = validateEtapa(req.query.etapa || 1);
   const cfg = (await dbGet('config')) || defaultConfig();
-  res.status(200).json({ etapa, data: buildConfigPayload(cfg, etapa) });
+  const payload = buildConfigPayload(cfg, etapa);
+  // A trava de etapa segue o config global (raiz /config), com fallback no camisetas.
+  payload.etapa_locked = await resolveEtapaLock(cfg);
+  res.status(200).json({ etapa, data: payload });
 }
 
 async function updateConfig(req, res) {

@@ -1,5 +1,26 @@
 const crypto = require('node:crypto');
-const { dbGet, dbSet } = require('./firebase-rest.cjs');
+const { dbGet, dbSet, dbGetExternal } = require('./firebase-rest.cjs');
+
+function normalizeEtapaLock(value) {
+  const lock = Number(value);
+  return lock === 1 || lock === 2 ? lock : 0;
+}
+
+// A trava de etapa segue o config GLOBAL (raiz /config, fora do namespace
+// camisetas/, compartilhado com o app de doacoes). O etapa_locked do
+// camisetas/config funciona como fallback quando o externo nao existir.
+async function resolveEtapaLock(camisetasCfg) {
+  let lock = normalizeEtapaLock(camisetasCfg?.etapa_locked);
+  try {
+    const external = await dbGetExternal('config');
+    if (external && external.etapa_locked != null) {
+      lock = normalizeEtapaLock(external.etapa_locked);
+    }
+  } catch {
+    // Em falha de leitura do config externo, mantem o fallback do camisetas.
+  }
+  return lock;
+}
 
 function sanitizeText(value, maxLen) {
   const text = String(value || '')
@@ -139,6 +160,8 @@ function requireConfigUpdateAccess(req, body) {
 module.exports = {
   dbGet,
   dbSet,
+  dbGetExternal,
+  resolveEtapaLock,
   sanitizeText,
   validateEtapa,
   applySecurityHeaders,

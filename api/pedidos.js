@@ -6,6 +6,7 @@ const {
   applySecurityHeaders,
   isRateLimited,
   requireAdminAccess,
+  resolveEtapaLock,
 } = require('./_firebase');
 const { withDefaults } = require('./catalogo-defaults.cjs');
 
@@ -97,7 +98,8 @@ async function createPedido(req, res) {
   const etapa = validateEtapa(req.body?.etapa);
   const cfg = await loadConfig();
 
-  if (cfg.etapa_locked && Number(cfg.etapa_locked) !== etapa) {
+  const etapaLock = await resolveEtapaLock(cfg);
+  if (etapaLock && etapaLock !== etapa) {
     return res.status(409).json({ error: 'etapa_locked' });
   }
   if (pedidosEncerrados(cfg, etapa)) {

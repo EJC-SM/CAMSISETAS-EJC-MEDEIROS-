@@ -23,6 +23,12 @@ function namespacedPath(path) {
   return clean ? `${NAMESPACE}/${clean}` : NAMESPACE;
 }
 
+// Caminho na raiz do banco, FORA do namespace camisetas/ (ex.: config global
+// compartilhado com o app de doacoes).
+function rootPath(path) {
+  return String(path || '').replace(/^\/+|\/+$/g, '');
+}
+
 // ---- Modo memoria -------------------------------------------------------
 const memoryTree = {};
 
@@ -67,6 +73,29 @@ function memDelete(path) {
   delete node[segments[segments.length - 1]];
 }
 
+// Variantes de memoria SEM namespace (para o config externo na raiz).
+function memGetRaw(path) {
+  const segments = rootPath(path).split('/').filter(Boolean);
+  let node = memoryTree;
+  for (const seg of segments) {
+    if (node == null || typeof node !== 'object' || !(seg in node)) return null;
+    node = node[seg];
+  }
+  return node === undefined ? null : clone(node);
+}
+
+function memSetRaw(path, value) {
+  const segments = rootPath(path).split('/').filter(Boolean);
+  let node = memoryTree;
+  for (let i = 0; i < segments.length - 1; i += 1) {
+    const seg = segments[i];
+    if (node[seg] == null || typeof node[seg] !== 'object') node[seg] = {};
+    node = node[seg];
+  }
+  node[segments[segments.length - 1]] = clone(value);
+  return clone(value);
+}
+
 // ---- REST autenticado ---------------------------------------------------
 function buildDbUrl(path) {
   const base = getFirebaseBaseUrl();
@@ -105,6 +134,37 @@ async function dbDelete(path) {
   return null;
 }
 
+function buildExternalDbUrl(path) {
+  const base = getFirebaseBaseUrl();
+  if (!base) throw new Error('missing FIREBASE_DATABASE_URL');
+  const secret = process.env.FIREBASE_DATABASE_SECRET;
+  const auth = secret ? `?auth=${encodeURIComponent(secret)}` : '';
+  return `${base}/${rootPath(path)}.json${auth}`;
+}
+
+// Leitura de caminhos FORA do namespace camisetas/ (ex.: o config global
+// compartilhado com o app de doacoes). Somente leitura em producao.
+async function dbGetExternal(path) {
+  if (!hasFirebaseConfig()) return memGetRaw(path);
+  const resp = await fetch(buildExternalDbUrl(path), { method: 'GET' });
+  if (!resp.ok) throw new Error(`firebase GET (external) failed: ${resp.status}`);
+  const data = await resp.json();
+  return data ?? null;
+}
+
+// Escrita fora do namespace — usada apenas em testes/dev (modo memoria) para
+// semear o config externo. A producao nao escreve nesse caminho.
+async function dbSetExternal(path, value) {
+  if (!hasFirebaseConfig()) return memSetRaw(path, value);
+  const resp = await fetch(buildExternalDbUrl(path), {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(value),
+  });
+  if (!resp.ok) throw new Error(`firebase PUT (external) failed: ${resp.status}`);
+  return await resp.json();
+}
+
 function getClientFirebaseConfig(env = process.env) {
   const firebase = {
     apiKey: env.FIREBASE_API_KEY || '',
@@ -129,6 +189,8 @@ module.exports = {
   dbGet,
   dbSet,
   dbDelete,
+  dbGetExternal,
+  dbSetExternal,
   getClientFirebaseConfig,
   resetMemoryStore,
 };
