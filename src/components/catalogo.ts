@@ -12,6 +12,20 @@ function faixaPreco(produto: Produto): string {
   return min === max ? formatBRL(min) : `${formatBRL(min)} – ${formatBRL(max)}`;
 }
 
+// Rótulos amigáveis das faixas de preço por tamanho (como no legado).
+const FAIXA_LABEL: Record<string, string> = {
+  'P-GG': 'P–GG',
+  EG: 'EG',
+  XG: 'XG',
+  EGG: 'EGG',
+  all: 'Único',
+};
+const FAIXA_ORDEM = ['P-GG', 'EG', 'XG', 'EGG', 'all'];
+
+function precoFaixa(produto: Produto, key: string): number {
+  return Number(produto.precos?.[key]) || 0;
+}
+
 function renderProdutoCard(produto: Produto): HTMLElement {
   const src = fotoProduto(produto.foto_key) || fotoFallback();
   const children: Array<HTMLElement> = [];
@@ -44,22 +58,39 @@ function renderCores(config: ConfigData): HTMLElement {
 }
 
 function renderTabelaPrecos(config: ConfigData): HTMLElement {
+  // Colunas de preço = faixas de tamanho realmente usadas no catálogo.
+  const faixas = FAIXA_ORDEM.filter((key) => config.produtos.some((produto) => precoFaixa(produto, key) > 0));
+
   const head = el('tr', {}, [
     el('th', { scope: 'col' }, ['Modelo']),
     el('th', { scope: 'col' }, ['Tamanhos']),
     el('th', { scope: 'col' }, ['Golas']),
-    el('th', { scope: 'col' }, ['Preço']),
+    ...faixas.map((key) => el('th', { scope: 'col', class: 'tabela__preco-col' }, [FAIXA_LABEL[key] ?? key])),
   ]);
-  const rows = config.produtos.map((produto) =>
-    el('tr', {}, [
+
+  const rows = config.produtos.map((produto) => {
+    const celulasPreco = faixas.map((key) => {
+      const valor = precoFaixa(produto, key);
+      const temPreco = valor > 0;
+      return el(
+        'td',
+        {
+          'data-label': FAIXA_LABEL[key] ?? key,
+          class: temPreco ? 'tabela__preco' : 'tabela__preco is-empty',
+        },
+        [temPreco ? formatBRL(valor) : '—'],
+      );
+    });
+    return el('tr', {}, [
       el('td', { 'data-label': 'Modelo' }, [produto.tipo]),
       el('td', { 'data-label': 'Tamanhos' }, [produto.tamanhos.join(', ')]),
       el('td', { 'data-label': 'Golas' }, [produto.golas.filter((g) => g && g !== '—').join(', ') || '—']),
-      el('td', { 'data-label': 'Preço' }, [faixaPreco(produto)]),
-    ]),
-  );
-  const table = el('table', { class: 'tabela' }, [
-    el('caption', { class: 'sr-only' }, ['Tabela de modelos e preços']),
+      ...celulasPreco,
+    ]);
+  });
+
+  const table = el('table', { class: 'tabela tabela--precos' }, [
+    el('caption', { class: 'sr-only' }, ['Tabela de modelos e preços por tamanho']),
     el('thead', {}, [head]),
     el('tbody', {}, rows),
   ]);

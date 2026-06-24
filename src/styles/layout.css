@@ -251,6 +251,18 @@ main {
   text-align: left;
 }
 
+/* Preço por faixa de tamanho — cabeçalho = tamanho, célula = valor */
+.tabela td.tabela__preco {
+  color: var(--accent-2);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* No mobile (cartão) faixas sem preço viram ruído: ficam ocultas. */
+.tabela td.tabela__preco.is-empty {
+  display: none;
+}
+
 /* ===== Itens do pedido ===== */
 .item-pedido {
   border: 1px solid var(--border);
@@ -271,6 +283,41 @@ main {
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--space-3);
+}
+
+/* Modelo + miniatura da foto do tipo selecionado */
+.modelo-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modelo-control .select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.modelo-foto {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.modelo-foto__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.modelo-foto__placeholder {
+  font-size: 1.4rem;
+  opacity: 0.5;
 }
 
 .qty {
@@ -536,5 +583,19 @@ main {
   .tabela th {
     color: var(--accent-2);
     font-size: 0.95rem;
+  }
+
+  /* No desktop as faixas viram colunas: valores alinhados à direita e
+     células vazias voltam a aparecer como "—". */
+  .tabela th.tabela__preco-col,
+  .tabela td.tabela__preco {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .tabela td.tabela__preco.is-empty {
+    display: table-cell;
+    color: var(--text-2);
+    font-weight: 400;
   }
 }

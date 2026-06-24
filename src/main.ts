@@ -8,11 +8,13 @@ import { fetchConfig } from './state/api';
 import { startPolling } from './state/firebase';
 import { getConfig, getEtapa, isEtapaSelectable, setConfig, setEtapa } from './state/store';
 import type { Etapa } from './state/types';
+import { el } from './utils/dom';
 import { fetchAuthSetupStatus } from './utils/password-auth';
 import { initWebVitals } from './utils/web-vitals';
 
 let view: ViewId = 'catalogo';
 let setupComplete = true;
+let loading = true;
 
 const root = document.getElementById('app');
 
@@ -23,6 +25,15 @@ async function hydrateConfig(etapa: Etapa): Promise<void> {
 
 async function hydrateAll(): Promise<void> {
   await Promise.all([hydrateConfig(1), hydrateConfig(2)]);
+}
+
+// Se a etapa atual estiver travada (etapa_locked aponta para outra etapa),
+// move a seleção para a etapa liberada.
+function applyEtapaLock(): void {
+  const locked = getConfig(getEtapa()).etapa_locked;
+  if (locked && !isEtapaSelectable(getEtapa())) {
+    setEtapa(locked);
+  }
 }
 
 async function refreshSetupStatus(): Promise<void> {
@@ -59,8 +70,21 @@ function renderView(): HTMLElement {
   });
 }
 
+function renderLoading(): void {
+  if (!root) return;
+  const screen = el('div', { class: 'app-loading', role: 'status', 'aria-live': 'polite' }, [
+    el('div', { class: 'app-loading__spinner', 'aria-hidden': 'true' }),
+    el('p', { class: 'app-loading__text' }, ['Carregando…']),
+  ]);
+  root.replaceChildren(screen);
+}
+
 function render(): void {
   if (!root) return;
+  if (loading) {
+    renderLoading();
+    return;
+  }
   const etapa = getEtapa();
 
   const skip = document.createElement('a');
@@ -90,10 +114,13 @@ function render(): void {
 async function boot(): Promise<void> {
   render();
   await Promise.all([hydrateAll(), refreshSetupStatus()]);
+  loading = false;
+  applyEtapaLock();
   render();
   initWebVitals();
   startPolling(async () => {
     await hydrateConfig(getEtapa());
+    applyEtapaLock();
     if (view === 'catalogo') render();
   }, 25000);
 }

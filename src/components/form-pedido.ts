@@ -1,3 +1,4 @@
+import { fotoFallback, fotoProduto } from '../assets';
 import { criarPedido } from '../state/api';
 import { isPrazoEncerrado } from '../state/store';
 import type { ConfigData, Cor, Etapa, ItemPedido, Produto } from '../state/types';
@@ -69,6 +70,22 @@ export function renderFormPedido(props: FormPedidoProps): HTMLElement {
       option('', 'Escolha o modelo', !item.produto),
       ...config.produtos.map((p) => option(p.tipo, p.tipo, item.produto === p.tipo)),
     ]) as HTMLSelectElement;
+
+    // Miniatura do modelo selecionado, ao lado do seletor.
+    const fotoSrc = produto ? fotoProduto(produto.foto_key) || fotoFallback() : '';
+    const modeloFoto = el('div', { class: 'modelo-foto', 'aria-hidden': 'true' }, [
+      fotoSrc
+        ? (el('img', {
+            class: 'modelo-foto__img',
+            src: fotoSrc,
+            alt: '',
+            width: 56,
+            height: 56,
+            loading: 'lazy',
+          }) as HTMLImageElement)
+        : el('span', { class: 'modelo-foto__placeholder' }, ['👕']),
+    ]);
+    const modeloControl = el('div', { class: 'modelo-control' }, [modeloFoto, produtoSelect]);
 
     const tamanhoSelect = el('select', { class: 'select', 'aria-label': 'Tamanho' }, [
       option('', 'Selecione o tamanho', !item.tamanho),
@@ -159,7 +176,7 @@ export function renderFormPedido(props: FormPedidoProps): HTMLElement {
     });
 
     const fields = el('div', { class: 'item-fields' }, [
-      field('Modelo', produtoSelect),
+      field('Modelo', modeloControl),
       field('Tamanho', tamanhoSelect),
     ]);
     if (golasValidas.length > 0) fields.appendChild(field('Gola', golaSelect));
