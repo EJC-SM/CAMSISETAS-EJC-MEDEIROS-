@@ -16,6 +16,7 @@
       ".write": false,
       "config": { ".read": true, ".write": false },
       "pedidos": { ".read": false, ".write": false },
+      "comprovantes": { ".read": false, ".write": false },
       "auth": { ".read": false, ".write": false }
     }
   }

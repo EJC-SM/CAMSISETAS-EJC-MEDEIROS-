@@ -5,11 +5,12 @@ import type { ConfigData, Cor, Etapa, ItemPedido, Produto } from '../state/types
 import { announceLive } from '../utils/accessibility';
 import { clear, el, option } from '../utils/dom';
 import { formatBRL } from '../utils/format';
-import { pixPayload, pixQrUrl } from '../utils/pix';
 import { formatPhoneBr } from '../utils/security';
 import { toastError, toastSuccess } from '../utils/toast';
 import { getPreco, validateItemPedido, validateNome, validateTelefone } from '../utils/validation';
+import { renderComprovanteUploader } from './comprovante-upload';
 import { openModal } from './modal';
+import { renderPixBox } from './pix-box';
 
 type DraftItem = Partial<ItemPedido>;
 
@@ -287,31 +288,21 @@ export function renderFormPedido(props: FormPedidoProps): HTMLElement {
     return errors;
   }
 
-  function openPixModal(total: number): void {
-    const payload = config.pix_chave
-      ? pixPayload(config.pix_chave, config.pix_nome || 'EJC', config.pix_cidade || 'BRASIL')
-      : '';
-    const qrSrc = config.pix_qr || (payload ? pixQrUrl(payload) : '');
-
-    const copyBtn = el('button', { class: 'btn btn--ghost btn--block', type: 'button' }, [
-      'Copiar código Pix',
-    ]) as HTMLButtonElement;
-    copyBtn.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(payload);
-        toastSuccess('Código Pix copiado!');
-      } catch {
-        toastError('Não foi possível copiar.');
-      }
+  function openPixModal(pedidoId: number, total: number): void {
+    const uploader = renderComprovanteUploader({
+      etapa,
+      id: pedidoId,
+      tel: telInput.value,
     });
 
     const content = el('div', { class: 'stack pix-box' }, [
       el('h2', { id: 'pix-title' }, ['Pedido registrado! 🎉']),
       el('p', {}, ['Total a pagar: ', el('b', {}, [formatBRL(total)])]),
-      el('p', { class: 'muted' }, ['Pague via Pix para confirmar. Guarde o comprovante com a equipe.']),
-      ...(qrSrc ? [el('img', { src: qrSrc, alt: 'QR Code Pix', width: 220, height: 220 })] : []),
-      ...(config.pix_chave ? [el('p', {}, ['Chave Pix: ', el('b', {}, [config.pix_chave])])] : []),
-      ...(payload ? [el('div', { class: 'pix-copia' }, [payload]), copyBtn] : []),
+      el('p', { class: 'muted' }, ['Pague via Pix com o valor já no QR e anexe o comprovante abaixo.']),
+      renderPixBox(config, total),
+      el('h3', {}, ['Enviar comprovante']),
+      el('p', { class: 'muted' }, ['Opcional agora — você também pode enviar depois na aba "Meu pedido".']),
+      uploader,
     ]);
 
     const handle = openModal(content, { labelledBy: 'pix-title' });
@@ -354,7 +345,7 @@ export function renderFormPedido(props: FormPedidoProps): HTMLElement {
 
     if (result.ok && result.data?.data) {
       toastSuccess('Pedido enviado com sucesso!');
-      openPixModal(result.data.data.total);
+      openPixModal(result.data.data.id, result.data.data.total);
     } else {
       const message =
         result.error === 'etapa_locked'

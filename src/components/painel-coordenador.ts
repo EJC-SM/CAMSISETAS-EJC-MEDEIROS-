@@ -1,10 +1,48 @@
-import { adminAction, atualizarConfig, fetchPedidos, marcarPago } from '../state/api';
+import { adminAction, atualizarConfig, fetchComprovante, fetchPedidos, marcarPago } from '../state/api';
 import { getConfig, setConfig } from '../state/store';
 import type { ConfigData, Etapa, Pedido } from '../state/types';
 import { clear, el } from '../utils/dom';
 import { downloadCsv, pedidosToCsv } from '../utils/export';
 import { formatBRL, formatDateTimeBr } from '../utils/format';
 import { toastError, toastSuccess } from '../utils/toast';
+import { renderComprovanteUploader } from './comprovante-upload';
+import { openModal } from './modal';
+
+function base64ToBlob(base64: string, type: string): Blob {
+  const bytes = atob(base64);
+  const arr = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i += 1) arr[i] = bytes.charCodeAt(i);
+  return new Blob([arr], { type });
+}
+
+async function verComprovante(etapa: Etapa, pedido: Pedido): Promise<void> {
+  const file = await fetchComprovante(etapa, pedido.id);
+  if (!file) {
+    toastError('Comprovante indisponível.');
+    return;
+  }
+  const url = URL.createObjectURL(base64ToBlob(file.dataBase64, file.type));
+  if (file.type === 'application/pdf') {
+    window.open(url, '_blank', 'noopener');
+    return;
+  }
+  const img = el('img', {
+    src: url,
+    alt: `Comprovante de ${pedido.nome}`,
+    class: 'comprovante-preview',
+  }) as HTMLImageElement;
+  const content = el('div', { class: 'stack' }, [
+    el('h2', { id: 'comprovante-title' }, [`Comprovante — ${pedido.nome}`]),
+    img,
+  ]);
+  const handle = openModal(content, {
+    labelledBy: 'comprovante-title',
+    onClose: () => URL.revokeObjectURL(url),
+  });
+  const closeBtn = el('button', { class: 'btn btn--primary btn--block', type: 'button' }, ['Fechar']);
+  closeBtn.addEventListener('click', () => handle.close());
+  content.appendChild(closeBtn);
+}
 
 export interface PainelCoordenadorProps {
   etapa: Etapa;
@@ -58,10 +96,33 @@ function renderPedido(pedido: Pedido, etapa: Etapa, onChange: () => void): HTMLE
     }),
   );
 
+  const comprovanteInfo = el('span', { class: 'grow muted' }, [
+    pedido.comprovante ? 'Comprovante enviado' : 'Sem comprovante',
+  ]);
+  const acoes: Array<Node | string> = [comprovanteInfo];
+  if (pedido.comprovante) {
+    const verBtn = el('button', { class: 'btn btn--ghost btn--sm', type: 'button' }, [
+      'Ver comprovante',
+    ]) as HTMLButtonElement;
+    verBtn.addEventListener('click', () => {
+      void verComprovante(etapa, pedido);
+    });
+    acoes.push(verBtn);
+  }
+
+  // Anexo de comprovante pelo coordenador (ex.: cliente enviou por outro canal).
+  // O endpoint confere o telefone do pedido, que o coordenador ja possui aqui.
+  const anexar = el('details', { class: 'comprovante-anexar' }, [
+    el('summary', {}, [pedido.comprovante ? 'Substituir comprovante' : 'Anexar comprovante']),
+    renderComprovanteUploader({ etapa, id: pedido.id, tel: pedido.tel, onUploaded: onChange }),
+  ]);
+
   return el('div', { class: 'pedido-item stack' }, [
     el('div', { class: 'pedido-item__head' }, [el('strong', {}, [pedido.nome]), badge]),
     el('div', { class: 'muted' }, [`${pedido.equipe} · ${pedido.tel} · ${formatDateTimeBr(pedido.data)}`]),
     itensList,
+    el('div', { class: 'row' }, acoes),
+    anexar,
     el('div', { class: 'row' }, [el('b', { class: 'grow' }, [formatBRL(pedido.total)]), toggle]),
   ]);
 }

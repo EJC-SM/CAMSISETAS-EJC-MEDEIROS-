@@ -3,6 +3,7 @@ import './styles/index.css';
 import { renderCatalogo } from './components/catalogo';
 import { renderFormPedido } from './components/form-pedido';
 import { type ViewId, renderHeader } from './components/header';
+import { renderMeuPedido } from './components/meu-pedido';
 import { renderPainel } from './components/painel';
 import { fetchConfig } from './state/api';
 import { startPolling } from './state/firebase';
@@ -52,6 +53,13 @@ function setEtapaAndRender(etapa: Etapa): void {
   render();
 }
 
+// Quando o prazo zera ao vivo, re-renderiza para travar a aba de pedido.
+// Se o usuario estiver justamente na tela de pedido, leva-o ao catalogo.
+function handlePrazoExpire(): void {
+  if (view === 'pedido') setView('catalogo');
+  else render();
+}
+
 function renderView(): HTMLElement {
   const etapa = getEtapa();
   const config = getConfig(etapa);
@@ -60,6 +68,7 @@ function renderView(): HTMLElement {
   if (view === 'pedido') {
     return renderFormPedido({ config, etapa, onSubmitted: () => setView('catalogo') });
   }
+  if (view === 'meu-pedido') return renderMeuPedido({ etapa, config });
   return renderPainel({
     etapa,
     setupComplete,
@@ -98,6 +107,7 @@ function render(): void {
     view,
     onView: setView,
     onEtapa: setEtapaAndRender,
+    onPrazoExpire: handlePrazoExpire,
   });
 
   const main = document.createElement('main');

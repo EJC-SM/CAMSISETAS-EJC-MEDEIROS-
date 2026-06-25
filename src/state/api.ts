@@ -1,5 +1,5 @@
 import { adminAuthHeaders } from '../utils/auth';
-import type { ConfigData, Etapa, ItemPedido, Pedido } from './types';
+import type { ComprovanteArquivo, ConfigData, Etapa, ItemPedido, MeuPedidoResumo, Pedido } from './types';
 
 export interface ApiResult<T> {
   ok: boolean;
@@ -66,6 +66,40 @@ export async function marcarPago(
     headers: jsonHeaders(adminAuthHeaders()),
     body: JSON.stringify({ etapa, id, pago }),
   });
+}
+
+export interface ComprovanteInput {
+  name: string;
+  type: string;
+  dataBase64: string;
+}
+
+export async function enviarComprovante(
+  etapa: Etapa,
+  id: number,
+  tel: string,
+  file: ComprovanteInput,
+): Promise<ApiResult<{ ok: boolean; uploadedAt: string }>> {
+  return requestJson<{ ok: boolean; uploadedAt: string }>('/api/comprovante', {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify({ etapa, id, tel, file }),
+  });
+}
+
+export async function buscarMeusPedidos(etapa: Etapa, tel: string): Promise<MeuPedidoResumo[] | null> {
+  const result = await requestJson<{ etapa: Etapa; data: MeuPedidoResumo[] }>(
+    `/api/meus-pedidos?etapa=${etapa}&tel=${encodeURIComponent(tel)}`,
+  );
+  return result.ok && result.data ? result.data.data : null;
+}
+
+export async function fetchComprovante(etapa: Etapa, id: number): Promise<ComprovanteArquivo | null> {
+  const result = await requestJson<{ etapa: Etapa; id: number; data: ComprovanteArquivo }>(
+    `/api/comprovante?etapa=${etapa}&id=${id}`,
+    { headers: adminAuthHeaders() },
+  );
+  return result.ok && result.data ? result.data.data : null;
 }
 
 export async function atualizarConfig(

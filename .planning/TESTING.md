@@ -20,14 +20,20 @@ npm run test:all
 Ambiente jsdom + WebCrypto (setup em `tests/unit/setup.ts`). Cobrem:
 - `security.test.ts` — sanitização, dígitos, máscara de telefone.
 - `validation.test.ts` — nome, telefone, quantidade, item de pedido, `getPreco`.
-- `pix.test.ts` — payload BR Code + CRC, URL de QR.
+- `pix.test.ts` — payload BR Code + CRC, URL de QR, e **valor embutido (campo 54)**
+  (com/sem valor, formato de 2 casas, posição entre os campos 53 e 58).
+- `comprovante.test.ts` — validação de tipo/tamanho do comprovante (imagem/PDF).
+- `prazo-banner.test.ts` — banner de prazo: nulo sem data, contagem para prazo futuro,
+  estado encerrado para prazo passado.
 - `format.test.ts` — moeda e countdown.
 - `export.test.ts` — CSV + mitigação de Formula Injection.
 - `password-auth.test.ts` — política de senha e derivação PBKDF2.
 - `backend.test.ts` — módulos `api/*` via `createRequire`: sanitização, `validateEtapa`,
   classificação de acesso ao config, sessões HMAC (criar/verificar/adulterar),
-  hash/proof, defaults do catálogo, e integração cliente↔servidor (chave PBKDF2 do
-  cliente aceita pelo `verifyProof` do servidor).
+  hash/proof, defaults do catálogo, integração cliente↔servidor (chave PBKDF2 do
+  cliente aceita pelo `verifyProof` do servidor), e os endpoints de **comprovante**
+  (upload com conferência de telefone, 403 divergente, 400 tipo inválido, GET só com
+  sessão admin) e **meus-pedidos** (busca por telefone com campos mínimos, sem PII).
 
 ## E2E (Playwright) — `tests/e2e/`
 Sobem o `npm run dev` em **modo memória** (`FIREBASE_DATABASE_URL` vazio) com

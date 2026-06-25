@@ -38,6 +38,24 @@ export interface Pedido {
   total: number;
   pago: boolean;
   data: string;
+  comprovante?: boolean;
+  comprovanteAt?: string;
+}
+
+export interface MeuPedidoResumo {
+  id: number;
+  total: number;
+  pago: boolean;
+  comprovante: boolean;
+  data: string;
+  resumo: string;
+}
+
+export interface ComprovanteArquivo {
+  name: string;
+  type: string;
+  dataBase64: string;
+  uploadedAt?: string;
 }
 
 export interface ConfigData {

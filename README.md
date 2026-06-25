@@ -1,8 +1,11 @@
 # EJC Medeiros — Camisetas
 
 App de **pedidos de camisetas** do EJC Medeiros: catálogo, pedido com cálculo de total e
-pagamento via **Pix**, além de painéis de Coordenador (gerenciar pedidos) e Dirigente
-(catálogo, equipes, prazos e senhas).
+pagamento via **Pix** (QR Code com o valor do pedido já embutido + copia-e-cola), envio de
+**comprovante** (imagem/PDF), aba **"Meu pedido"** (busca por WhatsApp para acompanhar e
+reenviar comprovante), **contagem regressiva do prazo** sempre visível (com a aba de pedido
+travada ao encerrar), além de painéis de Coordenador (gerenciar pedidos, marcar pago e
+anexar/ver comprovantes) e Dirigente (catálogo, equipes, prazos e senhas).
 
 Refatorado de um monólito React para **Vite + Vanilla TypeScript** com **API serverless**
 e **Firebase Realtime Database**, espelhando a arquitetura segura do app de doações.

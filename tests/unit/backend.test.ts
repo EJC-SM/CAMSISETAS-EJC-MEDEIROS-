@@ -6,7 +6,7 @@
  * de outro realm e o WebCrypto do Node rejeita o salt do PBKDF2. Sem uso de DOM.
  */
 import { createRequire } from 'node:module';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { deriveKeyFromPassword } from '../../src/utils/password-auth';
 
 const require = createRequire(import.meta.url);
@@ -18,6 +18,8 @@ const firebaseRest = require('../../api/firebase-rest.cjs');
 const password = require('../../api/password.js');
 const catalogo = require('../../api/catalogo-defaults.cjs');
 const pedidosHandler = require('../../api/pedidos.js');
+const comprovanteHandler = require('../../api/comprovante.js');
+const meusPedidosHandler = require('../../api/meus-pedidos.js');
 
 function mockRes() {
   return {
@@ -154,6 +156,111 @@ describe('trava de etapa via config externo (/config global)', () => {
     await pedidosHandler(req, res);
     expect(res.statusCode).toBe(409);
     expect((res.body as { error?: string })?.error).toBe('etapa_locked');
+  });
+});
+
+describe('comprovante (upload/visualização) + meus-pedidos (busca por telefone)', () => {
+  const tel = '(11) 98888-7777';
+  const fileOk = {
+    name: 'comp.jpg',
+    type: 'image/jpeg',
+    dataBase64: Buffer.from('hello').toString('base64'),
+  };
+
+  function req(over: Record<string, unknown>) {
+    return {
+      method: 'POST',
+      headers: {},
+      query: {},
+      body: {},
+      socket: { remoteAddress: `cmp-${Math.random()}` },
+      ...over,
+    };
+  }
+
+  beforeEach(async () => {
+    firebaseRest.resetMemoryStore();
+    await firebaseRest.dbSet('pedidos/etapa1', {
+      '123': {
+        id: 123,
+        nome: 'Maria',
+        tel,
+        equipe: 'Cozinha',
+        itens: [{ produto: 'X', tamanho: 'P', gola: '', cor: 'Preto', quantidade: 2, preco: 25 }],
+        total: 50,
+        pago: false,
+        data: new Date().toISOString(),
+      },
+    });
+  });
+
+  afterEach(() => {
+    firebaseRest.resetMemoryStore();
+  });
+
+  it('upload com telefone correto grava o arquivo e marca o pedido', async () => {
+    const res = mockRes();
+    await comprovanteHandler(req({ body: { etapa: 1, id: 123, tel, file: fileOk } }), res);
+    expect(res.statusCode).toBe(201);
+
+    const stored = (await firebaseRest.dbGet('comprovantes/etapa1/123')) as { type?: string } | null;
+    expect(stored?.type).toBe('image/jpeg');
+    const pedidos = (await firebaseRest.dbGet('pedidos/etapa1')) as Record<string, { comprovante?: boolean }>;
+    expect(pedidos['123'].comprovante).toBe(true);
+  });
+
+  it('rejeita upload com telefone divergente (403)', async () => {
+    const res = mockRes();
+    await comprovanteHandler(req({ body: { etapa: 1, id: 123, tel: '(11) 90000-0000', file: fileOk } }), res);
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('rejeita upload de tipo não permitido (400)', async () => {
+    const res = mockRes();
+    const file = { name: 'x.zip', type: 'application/zip', dataBase64: 'aGVsbG8=' };
+    await comprovanteHandler(req({ body: { etapa: 1, id: 123, tel, file } }), res);
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('GET do comprovante exige sessão admin (401)', async () => {
+    const res = mockRes();
+    await comprovanteHandler(req({ method: 'GET', query: { etapa: 1, id: 123 } }), res);
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('GET admin retorna o arquivo armazenado', async () => {
+    await comprovanteHandler(req({ body: { etapa: 1, id: 123, tel, file: fileOk } }), mockRes());
+    const res = mockRes();
+    await comprovanteHandler(
+      req({ method: 'GET', headers: { 'x-admin-token': 'unit-admin-token' }, query: { etapa: 1, id: 123 } }),
+      res,
+    );
+    expect(res.statusCode).toBe(200);
+    expect((res.body as { data: { type: string } }).data.type).toBe('image/jpeg');
+  });
+
+  it('meus-pedidos filtra por telefone e expõe apenas campos mínimos', async () => {
+    const res = mockRes();
+    await meusPedidosHandler(req({ method: 'GET', query: { etapa: 1, tel } }), res);
+    expect(res.statusCode).toBe(200);
+    const data = (res.body as { data: Array<Record<string, unknown>> }).data;
+    expect(data).toHaveLength(1);
+    expect(data[0]).toMatchObject({ id: 123, total: 50, pago: false, comprovante: false });
+    expect(data[0].nome).toBeUndefined();
+    expect(data[0].tel).toBeUndefined();
+  });
+
+  it('meus-pedidos com telefone curto retorna 400', async () => {
+    const res = mockRes();
+    await meusPedidosHandler(req({ method: 'GET', query: { etapa: 1, tel: '123' } }), res);
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('meus-pedidos sem correspondência retorna lista vazia', async () => {
+    const res = mockRes();
+    await meusPedidosHandler(req({ method: 'GET', query: { etapa: 1, tel: '(11) 90000-0000' } }), res);
+    expect(res.statusCode).toBe(200);
+    expect((res.body as { data: unknown[] }).data).toHaveLength(0);
   });
 });
 

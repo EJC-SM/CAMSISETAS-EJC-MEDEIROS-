@@ -18,7 +18,15 @@ function crc16(payload: string): string {
   return crc.toString(16).toUpperCase().padStart(4, '0');
 }
 
-export function pixPayload(chave: string, nome: string, cidade: string): string {
+// Formata o valor da transacao (campo 54) no padrao BR Code: ponto decimal,
+// duas casas, sem separador de milhar. Retorna '' quando nao ha valor valido,
+// preservando o comportamento de QR estatico (qualquer valor).
+function amountField(valor?: number): string {
+  if (valor == null || !Number.isFinite(valor) || valor <= 0) return '';
+  return field('54', valor.toFixed(2));
+}
+
+export function pixPayload(chave: string, nome: string, cidade: string, valor?: number): string {
   const safeNome = (nome || 'EJC').slice(0, 25);
   const safeCidade = (cidade || 'BRASIL').slice(0, 15);
   const merchantAccount = `${field('00', 'BR.GOV.BCB.PIX')}${field('01', chave)}`;
@@ -27,6 +35,8 @@ export function pixPayload(chave: string, nome: string, cidade: string): string 
     field('26', merchantAccount),
     '52040000',
     '5303986',
+    // Campo 54 (valor) deve vir entre o 53 (moeda) e o 58 (pais), em ordem ascendente.
+    amountField(valor),
     '5802BR',
     field('59', safeNome),
     field('60', safeCidade),

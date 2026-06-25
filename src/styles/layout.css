@@ -122,6 +122,13 @@
   background: rgba(226, 84, 16, 0.1);
 }
 
+.main-nav__item--disabled,
+.main-nav__item:disabled {
+  color: var(--danger);
+  opacity: 0.85;
+  cursor: not-allowed;
+}
+
 .main-nav__icon {
   font-size: 1.2rem;
   line-height: 1;
@@ -459,6 +466,56 @@ main {
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   color: var(--accent-2);
+}
+
+.prazo-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 8px var(--space-4) 10px;
+}
+
+.prazo-banner__icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.prazo-banner__text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.prazo-banner__label {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+.prazo-banner__data {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  text-transform: capitalize;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prazo-banner__timer {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  font-size: var(--fs-lg);
+  color: var(--accent-2);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  white-space: nowrap;
+}
+
+.prazo-banner.is-encerrado .prazo-banner__timer,
+.prazo-banner.is-encerrado .prazo-banner__label {
+  color: var(--danger);
 }
 
 .encerrado {

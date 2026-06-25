@@ -14,6 +14,8 @@ const handlers = {
   '/api/auth/initial-setup': require('./auth/initial-setup.js'),
   '/api/auth': require('./auth.js'),
   '/api/pedidos': require('./pedidos.js'),
+  '/api/comprovante': require('./comprovante.js'),
+  '/api/meus-pedidos': require('./meus-pedidos.js'),
   '/api/config': require('./config.js'),
   '/api/admin': require('./admin.js'),
 };

@@ -49,6 +49,22 @@ Servidor valida tudo, **calcula `total`** e grava `pago:false`. Erros: 400 (vali
 ### `PUT /api/pedidos`  — **sessão admin**
 Marca pago. Body: `{ etapa, id, pago }`. Rate-limit 40/min.
 
+### `GET /api/meus-pedidos?etapa=1|2&tel=...`  — público
+Busca pública por telefone para o cliente reencontrar o próprio pedido e enviar o
+comprovante. Retorna **apenas** campos mínimos (sem expor PII de terceiros):
+`{ etapa, data: [{ id, total, pago, comprovante, data, resumo }] }`. Rate-limit 15/min.
+
+### `POST /api/comprovante`  — público
+Anexa o comprovante de pagamento a um pedido. Body:
+`{ etapa, id, tel, file: { name, type, dataBase64 } }`. Aceita `image/jpeg|png|webp` e
+`application/pdf`; valida base64 e tamanho (≤ 4 MB armazenado). Confere o `tel` contra o
+do pedido (anti-abuso → 403 `tel_mismatch`). Grava em `comprovantes/etapa{n}/{id}` e marca
+`pedido.comprovante = true` + `comprovanteAt`. Rate-limit 10/min.
+
+### `GET /api/comprovante?etapa=1|2&id=...`  — **sessão admin**
+Retorna o arquivo armazenado para visualização no painel:
+`{ etapa, id, data: { name, type, dataBase64, uploadedAt } }`. 404 se não houver.
+
 ### `POST /api/admin`  — **dirigente**
 Body `{ action, ... }`:
 - `reset_pedidos` (`etapa`) — zera pedidos da etapa.
@@ -75,6 +91,7 @@ Body `{ coordHash, dirHash }` (hashes PBKDF2 base64url). Só uma vez por ambient
 ```
 camisetas/
   config/                     # ver campos acima
-  pedidos/etapa{1,2}/{id}/     # { id, nome, tel, equipe, itens[], total, pago, data }
+  pedidos/etapa{1,2}/{id}/     # { id, nome, tel, equipe, itens[], total, pago, data, comprovante?, comprovanteAt? }
+  comprovantes/etapa{1,2}/{id}/ # { name, type, data(base64), uploadedAt } — leitura só via API com sessão admin
   auth/                       # salts, senha_coord/senha_dir (hash), meta, challenges
 ```

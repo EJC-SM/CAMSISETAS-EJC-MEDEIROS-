@@ -27,6 +27,7 @@ Publicar `database.rules.json` (que contém a **união** doações + camisetas) 
 Firebase Console → Realtime Database → Regras. Conferir que:
 - `camisetas/config` = leitura pública, escrita `false`.
 - `camisetas/pedidos` = leitura `false` (PII), escrita `false`.
+- `camisetas/comprovantes` = leitura `false`, escrita `false` (acesso só via API com o secret do servidor).
 - `camisetas/auth` = `false`/`false`.
 
 > Atenção: publicar essas regras substitui as regras atuais do banco. Por isso elas
