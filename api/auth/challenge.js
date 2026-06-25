@@ -1,5 +1,5 @@
-const { applySecurityHeaders, isRateLimited, sanitizeText } = require('../_firebase');
-const { validateRole, getPublicAuthParams, issueChallenge } = require('../password');
+const { applySecurityHeaders, isRateLimited, sanitizeText } = require('../_lib/_firebase');
+const { validateRole, getPublicAuthParams, issueChallenge } = require('../_lib/password');
 
 module.exports = async function handler(req, res) {
   try {

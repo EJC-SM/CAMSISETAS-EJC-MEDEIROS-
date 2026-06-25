@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => {
       {
         name: 'ejc-local-api',
         configureServer(server) {
-          const { createDevApiMiddleware } = require('./api/dev-server.cjs');
+          const { createDevApiMiddleware } = require('./api/_lib/dev-server.cjs');
           server.middlewares.use(createDevApiMiddleware());
         },
       },

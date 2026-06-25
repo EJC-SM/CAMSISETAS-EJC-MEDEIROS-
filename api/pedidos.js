@@ -7,8 +7,8 @@ const {
   isRateLimited,
   requireAdminAccess,
   resolveEtapaLock,
-} = require('./_firebase');
-const { withDefaults } = require('./catalogo-defaults.cjs');
+} = require('./_lib/_firebase');
+const { withDefaults } = require('./_lib/catalogo-defaults.cjs');
 
 function badRequest(res, message) {
   res.status(400).json({ error: message });

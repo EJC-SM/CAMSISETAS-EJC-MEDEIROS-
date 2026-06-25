@@ -6,9 +6,9 @@ const {
   applySecurityHeaders,
   isRateLimited,
   requireDirigenteAccess,
-} = require('./_firebase');
-const { setPasswordHash } = require('./password');
-const { defaultConfig, PRODUTOS_DEFAULT, CORES_DEFAULT } = require('./catalogo-defaults.cjs');
+} = require('./_lib/_firebase');
+const { setPasswordHash } = require('./_lib/password');
+const { defaultConfig, PRODUTOS_DEFAULT, CORES_DEFAULT } = require('./_lib/catalogo-defaults.cjs');
 
 async function handleAdmin(req, res) {
   if (!requireDirigenteAccess(req)) {

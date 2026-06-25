@@ -13,10 +13,10 @@ const require = createRequire(import.meta.url);
 
 // Modulos CJS da API (api/package.json -> type commonjs). createRequire respeita
 // a resolucao do Node e evita atrito ESM/CJS no Vite.
-const firebase = require('../../api/_firebase.js');
-const firebaseRest = require('../../api/firebase-rest.cjs');
-const password = require('../../api/password.js');
-const catalogo = require('../../api/catalogo-defaults.cjs');
+const firebase = require('../../api/_lib/_firebase.js');
+const firebaseRest = require('../../api/_lib/firebase-rest.cjs');
+const password = require('../../api/_lib/password.js');
+const catalogo = require('../../api/_lib/catalogo-defaults.cjs');
 const pedidosHandler = require('../../api/pedidos.js');
 const comprovanteHandler = require('../../api/comprovante.js');
 const meusPedidosHandler = require('../../api/meus-pedidos.js');

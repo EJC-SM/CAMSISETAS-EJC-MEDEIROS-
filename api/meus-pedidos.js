@@ -1,4 +1,4 @@
-const { dbGet, validateEtapa, applySecurityHeaders, isRateLimited } = require('./_firebase');
+const { dbGet, validateEtapa, applySecurityHeaders, isRateLimited } = require('./_lib/_firebase');
 
 function digitsOnly(value) {
   return String(value || '').replace(/\D+/g, '');

@@ -37,6 +37,13 @@ Firebase Console → Realtime Database → Regras. Conferir que:
 
 A Vercel detecta Vite. `vercel.json` faz o rewrite de SPA e mantém `/api/*` nas funções.
 
+> **Limite do plano Hobby: máx. 12 Serverless Functions.** A Vercel conta **cada arquivo
+> dentro de `api/`** como uma função, exceto os iniciados por `_`. Por isso os módulos
+> auxiliares (firebase-rest, catálogo, password, auth-store, dev-server, `_firebase`) ficam
+> em **`api/_lib/`** (pasta ignorada pela contagem, mas ainda empacotada como dependência).
+> Hoje há **11 endpoints** em `api/`. Ao adicionar um novo endpoint, confira que o total não
+> ultrapassa 12; código compartilhado deve ir para `api/_lib/`.
+
 ## 4. Setup inicial de senhas (uma vez por ambiente)
 
 Após o primeiro deploy, com `AUTH_SETUP_TOKEN` configurado, abra o app → aba **Painel** →

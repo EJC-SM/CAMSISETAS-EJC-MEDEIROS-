@@ -13,7 +13,7 @@ cp .env.example .env   # preencha se quiser usar o banco real; sem isso roda em 
 ## Scripts
 | Script | O que faz |
 |--------|-----------|
-| `npm run dev` | Vite + API local (`api/dev-server.cjs`) |
+| `npm run dev` | Vite + API local (`api/_lib/dev-server.cjs`) |
 | `npm run build` | Build de produção |
 | `npm run preview` | Servir o build |
 | `npm run typecheck` | `tsc --noEmit` |

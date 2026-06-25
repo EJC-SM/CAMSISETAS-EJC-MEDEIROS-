@@ -6,8 +6,8 @@ const {
   isRateLimited,
   requireConfigUpdateAccess,
   resolveEtapaLock,
-} = require('./_firebase');
-const { defaultConfig, buildConfigPayload, applyConfigUpdate } = require('./catalogo-defaults.cjs');
+} = require('./_lib/_firebase');
+const { defaultConfig, buildConfigPayload, applyConfigUpdate } = require('./_lib/catalogo-defaults.cjs');
 
 async function getConfig(req, res) {
   const etapa = validateEtapa(req.query.etapa || 1);

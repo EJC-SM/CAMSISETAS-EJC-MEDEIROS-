@@ -7,17 +7,17 @@ const { parse: parseUrl } = require('node:url');
 const { hasFirebaseConfig } = require('./firebase-rest.cjs');
 
 const handlers = {
-  '/api/health': require('./health.js'),
-  '/api/runtime-config': require('./runtime-config.js'),
-  '/api/auth/challenge': require('./auth/challenge.js'),
-  '/api/auth/status': require('./auth/status.js'),
-  '/api/auth/initial-setup': require('./auth/initial-setup.js'),
-  '/api/auth': require('./auth.js'),
-  '/api/pedidos': require('./pedidos.js'),
-  '/api/comprovante': require('./comprovante.js'),
-  '/api/meus-pedidos': require('./meus-pedidos.js'),
-  '/api/config': require('./config.js'),
-  '/api/admin': require('./admin.js'),
+  '/api/health': require('../health.js'),
+  '/api/runtime-config': require('../runtime-config.js'),
+  '/api/auth/challenge': require('../auth/challenge.js'),
+  '/api/auth/status': require('../auth/status.js'),
+  '/api/auth/initial-setup': require('../auth/initial-setup.js'),
+  '/api/auth': require('../auth.js'),
+  '/api/pedidos': require('../pedidos.js'),
+  '/api/comprovante': require('../comprovante.js'),
+  '/api/meus-pedidos': require('../meus-pedidos.js'),
+  '/api/config': require('../config.js'),
+  '/api/admin': require('../admin.js'),
 };
 
 function readBody(req) {

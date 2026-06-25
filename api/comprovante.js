@@ -6,7 +6,7 @@ const {
   applySecurityHeaders,
   isRateLimited,
   requireAdminAccess,
-} = require('./_firebase');
+} = require('./_lib/_firebase');
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'application/pdf']);
 // Teto do conteudo armazenado (base64 decodificado). Cobre o PDF de ate 3MB e

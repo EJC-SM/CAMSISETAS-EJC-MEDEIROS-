@@ -1,11 +1,11 @@
-const { applySecurityHeaders, isRateLimited, createAdminSession, sanitizeText } = require('./_firebase');
+const { applySecurityHeaders, isRateLimited, createAdminSession, sanitizeText } = require('./_lib/_firebase');
 const {
   validateRole,
   verifyProof,
   consumeChallenge,
   getStoredPasswordHash,
   getAuthStatus,
-} = require('./password');
+} = require('./_lib/password');
 
 module.exports = async function handler(req, res) {
   try {
