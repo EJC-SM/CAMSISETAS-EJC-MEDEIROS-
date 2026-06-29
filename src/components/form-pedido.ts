@@ -17,6 +17,8 @@ type DraftItem = Partial<ItemPedido>;
 export interface FormPedidoProps {
   config: ConfigData;
   etapa: Etapa;
+  // Modelo (tipo ou id) pré-selecionado ao abrir o pedido a partir do catálogo.
+  produtoInicial?: string;
   onSubmitted: () => void;
 }
 
@@ -36,7 +38,15 @@ export function renderFormPedido(props: FormPedidoProps): HTMLElement {
     ]);
   }
 
-  const itens: DraftItem[] = [{ quantidade: 1 }];
+  const produtoInicial =
+    props.produtoInicial &&
+    config.produtos.some((p) => p.tipo === props.produtoInicial || p.id === props.produtoInicial)
+      ? props.produtoInicial
+      : undefined;
+
+  const itens: DraftItem[] = [
+    produtoInicial ? { produto: produtoInicial, quantidade: 1 } : { quantidade: 1 },
+  ];
 
   const itensContainer = el('div', {});
   const totalEl = el('b', {}, ['R$ 0,00']);
@@ -64,6 +74,63 @@ export function renderFormPedido(props: FormPedidoProps): HTMLElement {
     ]);
   }
 
+  // Seletor por badges (botões) com comportamento de grupo de rádio. Usado para
+  // tamanho e cor no lugar dos <select>.
+  function badgeGroup(args: {
+    options: Array<{ value: string; label: string; cor?: Cor }>;
+    selected: string | undefined;
+    ariaLabel: string;
+    emptyText: string;
+    onSelect: (value: string) => void;
+  }): HTMLElement {
+    const { options, selected, ariaLabel, emptyText, onSelect } = args;
+    if (options.length === 0) {
+      return el('p', { class: 'hint badge-group__empty' }, [emptyText]);
+    }
+
+    const group = el('div', { class: 'badge-group', role: 'radiogroup', 'aria-label': ariaLabel });
+    const buttons: HTMLButtonElement[] = [];
+
+    options.forEach((opt) => {
+      const children: Array<Node | string> = [];
+      if (opt.cor) {
+        const swatch = el('span', {
+          class: `badge__swatch${opt.cor.border ? ' badge__swatch--border' : ''}`,
+          'aria-hidden': 'true',
+        });
+        swatch.style.background = opt.cor.hex;
+        children.push(swatch);
+      }
+      children.push(el('span', { class: 'badge__label' }, [opt.label]));
+
+      const isActive = selected === opt.value;
+      const btn = el(
+        'button',
+        {
+          class: `badge${isActive ? ' badge--active' : ''}`,
+          type: 'button',
+          role: 'radio',
+          'aria-checked': isActive,
+        },
+        children,
+      ) as HTMLButtonElement;
+
+      btn.addEventListener('click', () => {
+        buttons.forEach((other, i) => {
+          const active = options[i].value === opt.value;
+          other.classList.toggle('badge--active', active);
+          other.setAttribute('aria-checked', String(active));
+        });
+        onSelect(opt.value);
+      });
+
+      buttons.push(btn);
+      group.appendChild(btn);
+    });
+
+    return group;
+  }
+
   function renderItemRow(item: DraftItem, index: number): HTMLElement {
     const produto = findProduto(item.produto);
 
@@ -72,26 +139,36 @@ export function renderFormPedido(props: FormPedidoProps): HTMLElement {
       ...config.produtos.map((p) => option(p.tipo, p.tipo, item.produto === p.tipo)),
     ]) as HTMLSelectElement;
 
-    // Miniatura do modelo selecionado, ao lado do seletor.
+    // Foto grande do modelo selecionado (à esquerda no desktop, topo no mobile).
     const fotoSrc = produto ? fotoProduto(produto.foto_key) || fotoFallback() : '';
-    const modeloFoto = el('div', { class: 'modelo-foto', 'aria-hidden': 'true' }, [
+    const itemFoto = el('div', { class: 'item-foto', 'aria-hidden': 'true' }, [
       fotoSrc
         ? (el('img', {
-            class: 'modelo-foto__img',
+            class: 'item-foto__img',
             src: fotoSrc,
             alt: '',
-            width: 56,
-            height: 56,
+            width: 280,
+            height: 280,
             loading: 'lazy',
           }) as HTMLImageElement)
-        : el('span', { class: 'modelo-foto__placeholder' }, ['👕']),
+        : el('span', { class: 'item-foto__placeholder' }, ['👕']),
     ]);
-    const modeloControl = el('div', { class: 'modelo-control' }, [modeloFoto, produtoSelect]);
 
-    const tamanhoSelect = el('select', { class: 'select', 'aria-label': 'Tamanho' }, [
-      option('', 'Selecione o tamanho', !item.tamanho),
-      ...(produto?.tamanhos || []).map((t) => option(t, t, item.tamanho === t)),
-    ]) as HTMLSelectElement;
+    const unitarioInicial = produto && item.tamanho ? formatBRL(getPreco(produto, item.tamanho)) : '—';
+    const unitarioEl = el('span', { class: 'muted' }, [`Unitário: ${unitarioInicial}`]);
+
+    const tamanhoControl = badgeGroup({
+      options: (produto?.tamanhos || []).map((t) => ({ value: t, label: t })),
+      selected: item.tamanho,
+      ariaLabel: 'Tamanho',
+      emptyText: 'Escolha o modelo primeiro.',
+      onSelect: (value) => {
+        item.tamanho = value;
+        unitarioEl.textContent = `Unitário: ${produto ? formatBRL(getPreco(produto, value)) : '—'}`;
+        recalcTotal();
+        updateSubmitState();
+      },
+    });
 
     const golasValidas = (produto?.golas || []).filter((g) => g && g !== '—');
     const golaSelect = el('select', { class: 'select', 'aria-label': 'Gola' }, [
@@ -100,10 +177,16 @@ export function renderFormPedido(props: FormPedidoProps): HTMLElement {
     ]) as HTMLSelectElement;
 
     const cores = coresDisponiveis(produto, config.cores);
-    const corSelect = el('select', { class: 'select', 'aria-label': 'Cor' }, [
-      option('', 'Selecione a cor', !item.cor),
-      ...cores.map((c) => option(c.nome, c.nome, item.cor === c.nome)),
-    ]) as HTMLSelectElement;
+    const corControl = badgeGroup({
+      options: cores.map((c) => ({ value: c.nome, label: c.nome, cor: c })),
+      selected: item.cor,
+      ariaLabel: 'Cor',
+      emptyText: 'Nenhuma cor disponível.',
+      onSelect: (value) => {
+        item.cor = value;
+        updateSubmitState();
+      },
+    });
 
     const qtdInput = el('input', {
       class: 'qty__input',
@@ -144,6 +227,7 @@ export function renderFormPedido(props: FormPedidoProps): HTMLElement {
       minusBtn.disabled = value <= 1;
       plusBtn.disabled = value >= 99;
       recalcTotal();
+      updateSubmitState();
     };
 
     minusBtn.addEventListener('click', () => {
@@ -165,23 +249,17 @@ export function renderFormPedido(props: FormPedidoProps): HTMLElement {
       item.cor = undefined;
       rerenderItens();
     });
-    tamanhoSelect.addEventListener('change', () => {
-      item.tamanho = tamanhoSelect.value;
-      recalcTotal();
-    });
     golaSelect.addEventListener('change', () => {
       item.gola = golaSelect.value;
-    });
-    corSelect.addEventListener('change', () => {
-      item.cor = corSelect.value;
+      updateSubmitState();
     });
 
     const fields = el('div', { class: 'item-fields' }, [
-      field('Modelo', modeloControl),
-      field('Tamanho', tamanhoSelect),
+      field('Modelo', produtoSelect),
+      field('Tamanho', tamanhoControl),
     ]);
     if (golasValidas.length > 0) fields.appendChild(field('Gola', golaSelect));
-    fields.appendChild(field('Cor', corSelect));
+    fields.appendChild(field('Cor', corControl));
     fields.appendChild(field('Quantidade', qtyControl));
 
     const removeBtn = el('button', { class: 'btn btn--ghost btn--sm', type: 'button' }, [
@@ -193,15 +271,13 @@ export function renderFormPedido(props: FormPedidoProps): HTMLElement {
       rerenderItens();
     });
 
-    const precoLinha = produto && item.tamanho ? formatBRL(getPreco(produto, item.tamanho)) : '—';
-
     const row = el('div', { class: 'item-pedido' }, [
       el('div', { class: 'item-pedido__head' }, [
         el('strong', { class: 'grow' }, [`Item ${index + 1}`]),
-        el('span', { class: 'muted' }, [`Unitário: ${precoLinha}`]),
+        unitarioEl,
         removeBtn,
       ]),
-      fields,
+      el('div', { class: 'item-pedido__body' }, [itemFoto, fields]),
     ]);
 
     minusBtn.disabled = (item.quantidade ?? 1) <= 1;
@@ -212,6 +288,7 @@ export function renderFormPedido(props: FormPedidoProps): HTMLElement {
     clear(itensContainer);
     itens.forEach((item, index) => itensContainer.appendChild(renderItemRow(item, index)));
     recalcTotal();
+    updateSubmitState();
   }
 
   const nomeInput = el('input', {
@@ -231,12 +308,15 @@ export function renderFormPedido(props: FormPedidoProps): HTMLElement {
   }) as HTMLInputElement;
   telInput.addEventListener('input', () => {
     telInput.value = formatPhoneBr(telInput.value);
+    updateSubmitState();
   });
+  nomeInput.addEventListener('input', () => updateSubmitState());
 
   const equipeSelect = el('select', { class: 'select', id: 'pedido-equipe', required: true }, [
     option('', 'Selecione sua equipe', true),
     ...config.equipes.map((e) => option(e, e)),
   ]) as HTMLSelectElement;
+  equipeSelect.addEventListener('change', () => updateSubmitState());
 
   const addBtn = el('button', { class: 'btn btn--ghost', type: 'button' }, [
     '+ Adicionar item',
@@ -250,6 +330,7 @@ export function renderFormPedido(props: FormPedidoProps): HTMLElement {
   const submitBtn = el('button', { class: 'btn btn--primary btn--block', type: 'submit' }, [
     'Fazer pedido',
   ]) as HTMLButtonElement;
+  submitBtn.disabled = true;
 
   const form = el('form', { class: 'stack', novalidate: true, 'aria-labelledby': 'form-title' }, [
     el('h2', { id: 'form-title' }, ['Fazer pedido']),
@@ -272,6 +353,10 @@ export function renderFormPedido(props: FormPedidoProps): HTMLElement {
     errorSummary,
     submitBtn,
   ]) as HTMLFormElement;
+
+  function updateSubmitState(): void {
+    submitBtn.disabled = collectErrors().length > 0;
+  }
 
   function collectErrors(): string[] {
     const errors: string[] = [];
@@ -340,8 +425,8 @@ export function renderFormPedido(props: FormPedidoProps): HTMLElement {
       })),
     });
 
-    submitBtn.disabled = false;
     submitBtn.textContent = 'Fazer pedido';
+    updateSubmitState();
 
     if (result.ok && result.data?.data) {
       toastSuccess('Pedido enviado com sucesso!');

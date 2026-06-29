@@ -4,8 +4,8 @@ const COORD_PASSWORD = 'coordpass123';
 const DIR_PASSWORD = 'dirpass1234';
 
 test('setup inicial + login do coordenador + visão de pedidos', async ({ page }) => {
-  await page.goto('/');
-  await page.getByRole('tab', { name: /Painel/ }).click();
+  // O painel so e acessivel pela rota dedicada /admin (sem aba no menu).
+  await page.goto('/admin');
 
   const setupVisible = await page
     .getByLabel('Token de setup')

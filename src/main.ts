@@ -13,9 +13,16 @@ import { el } from './utils/dom';
 import { fetchAuthSetupStatus } from './utils/password-auth';
 import { initWebVitals } from './utils/web-vitals';
 
-let view: ViewId = 'catalogo';
+// O painel administrativo nao tem aba no menu: so e alcancado pela rota /admin.
+function isAdminRoute(): boolean {
+  return /^\/admin\/?$/.test(window.location.pathname);
+}
+
+let view: ViewId = isAdminRoute() ? 'painel' : 'catalogo';
 let setupComplete = true;
 let loading = true;
+// Modelo escolhido no catálogo para abrir o pedido já selecionado (consumido 1x).
+let pedidoProdutoInicial: string | undefined;
 
 const root = document.getElementById('app');
 
@@ -44,7 +51,16 @@ async function refreshSetupStatus(): Promise<void> {
 
 function setView(next: ViewId): void {
   view = next;
+  // Ao sair do painel pela navegacao, limpa a URL /admin para nao reabrir o login.
+  if (next !== 'painel' && isAdminRoute()) {
+    window.history.replaceState(null, '', '/');
+  }
   render();
+}
+
+function abrirPedidoComProduto(produtoRef: string): void {
+  pedidoProdutoInicial = produtoRef;
+  setView('pedido');
 }
 
 function setEtapaAndRender(etapa: Etapa): void {
@@ -64,9 +80,13 @@ function renderView(): HTMLElement {
   const etapa = getEtapa();
   const config = getConfig(etapa);
 
-  if (view === 'catalogo') return renderCatalogo(config);
+  if (view === 'catalogo') {
+    return renderCatalogo(config, (produto) => abrirPedidoComProduto(produto.tipo));
+  }
   if (view === 'pedido') {
-    return renderFormPedido({ config, etapa, onSubmitted: () => setView('catalogo') });
+    const produtoInicial = pedidoProdutoInicial;
+    pedidoProdutoInicial = undefined;
+    return renderFormPedido({ config, etapa, produtoInicial, onSubmitted: () => setView('catalogo') });
   }
   if (view === 'meu-pedido') return renderMeuPedido({ etapa, config });
   return renderPainel({

@@ -16,14 +16,17 @@ export interface PainelProps {
 export function renderPainel(props: PainelProps): HTMLElement {
   const container = el('div', { class: 'stack' });
   let mode: 'coordenador' | 'dirigente' = isLoggedIn('dirigente') ? 'dirigente' : 'coordenador';
+  // Estado local para refletir a conclusao do setup sem depender de um novo render do app.
+  let setupComplete = props.setupComplete;
 
   function render(): void {
     clear(container);
 
-    if (!props.setupComplete) {
+    if (!setupComplete) {
       container.appendChild(
         el('section', { class: 'card' }, [
           renderAuthSetup(() => {
+            setupComplete = true;
             props.onSetupComplete();
             render();
           }),

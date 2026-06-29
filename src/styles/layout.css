@@ -170,6 +170,33 @@ main {
   background: var(--card);
 }
 
+/* Foto clicável que inicia o pedido com o modelo selecionado */
+.produto-card__foto-btn {
+  border: none;
+  background: var(--card);
+  padding: 0;
+  margin-bottom: 6px;
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.produto-card__foto-btn img {
+  margin-bottom: 0;
+  transition: transform 0.18s ease;
+}
+
+.produto-card__foto-btn:hover img {
+  transform: scale(1.04);
+}
+
+.produto-card__foto-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 .produto-card__nome {
   font-weight: 700;
   font-size: var(--fs-base);
@@ -286,28 +313,19 @@ main {
   margin-bottom: var(--space-3);
 }
 
-.item-fields {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-3);
-}
-
-/* Modelo + miniatura da foto do tipo selecionado */
-.modelo-control {
+/* Corpo do item: foto + campos. Mobile = coluna (foto em cima). */
+.item-pedido__body {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: var(--space-4);
 }
 
-.modelo-control .select {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.modelo-foto {
+.item-foto {
   flex: none;
-  width: 52px;
-  height: 52px;
+  width: 100%;
+  max-width: 280px;
+  aspect-ratio: 1;
+  margin: 0 auto;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--card);
@@ -316,15 +334,21 @@ main {
   overflow: hidden;
 }
 
-.modelo-foto__img {
+.item-foto__img {
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
 
-.modelo-foto__placeholder {
-  font-size: 1.4rem;
+.item-foto__placeholder {
+  font-size: 3rem;
   opacity: 0.5;
+}
+
+.item-fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
 }
 
 .qty {
@@ -606,8 +630,22 @@ main {
     grid-template-columns: repeat(4, 1fr);
   }
 
+  /* Desktop: foto grande à esquerda, campos em coluna à direita. */
+  .item-pedido__body {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: var(--space-5);
+  }
+
+  .item-foto {
+    width: 280px;
+    max-width: none;
+    margin: 0;
+  }
+
   .item-fields {
-    grid-template-columns: repeat(2, 1fr);
+    flex: 1;
+    min-width: 0;
     gap: var(--space-4);
   }
 

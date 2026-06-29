@@ -16,13 +16,27 @@ test('fluxo público: catálogo → pedido → Pix', async ({ page }) => {
 
   // Modelo sem gola (Infantil) simplifica o fluxo.
   await page.getByLabel('Modelo').selectOption('Infantil (00–08)');
-  await page.getByLabel('Tamanho').selectOption('4');
-  await page.getByLabel('Cor').selectOption('Preto');
-  await page.getByLabel('Quantidade').fill('2');
+  // Tamanho e cor agora são badges (botões de rádio).
+  await page.getByRole('radio', { name: '4', exact: true }).click();
+  await page.getByRole('radio', { name: 'Preto', exact: true }).click();
+  // O campo numerico de quantidade tem role spinbutton; evita casar com os botoes +/-.
+  await page.getByRole('spinbutton', { name: 'Quantidade' }).fill('2');
 
   await page.getByRole('button', { name: 'Fazer pedido', exact: true }).click();
 
   // Modal de confirmação com Pix.
   await expect(page.getByRole('heading', { name: /Pedido registrado/ })).toBeVisible();
   await expect(page.getByText(/Total a pagar/)).toBeVisible();
+});
+
+test('clicar na foto do catálogo abre o pedido com o modelo selecionado', async ({ page }) => {
+  await page.goto('/');
+
+  await expect(page.getByRole('heading', { name: 'Modelos disponíveis' })).toBeVisible();
+
+  // Clicar na foto do modelo Infantil leva ao pedido já selecionado.
+  await page.getByRole('button', { name: 'Fazer pedido de Infantil (00–08)' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Fazer pedido' })).toBeVisible();
+  await expect(page.getByLabel('Modelo')).toHaveValue('Infantil (00–08)');
 });

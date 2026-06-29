@@ -83,6 +83,62 @@
   font-size: 0.88rem;
 }
 
+/* Seleção por badges (tamanho e cor) */
+.badge-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.badge-group__empty {
+  margin: 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--border-strong);
+  background: var(--card);
+  color: var(--text);
+  border-radius: var(--radius-pill);
+  padding: 8px 14px;
+  min-height: var(--control-h-sm);
+  font: inherit;
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.badge:hover {
+  border-color: var(--accent);
+}
+
+.badge:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.badge--active {
+  border-color: var(--accent);
+  background: rgba(226, 84, 16, 0.12);
+  color: var(--accent-strong);
+}
+
+.badge__swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  box-shadow: inset 0 0 0 1px rgba(21, 23, 42, 0.12);
+  flex: none;
+}
+
+.badge__swatch--border {
+  border-color: var(--border-strong);
+}
+
 .total-bar {
   display: flex;
   align-items: center;

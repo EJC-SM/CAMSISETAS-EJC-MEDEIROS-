@@ -26,11 +26,28 @@ function precoFaixa(produto: Produto, key: string): number {
   return Number(produto.precos?.[key]) || 0;
 }
 
-function renderProdutoCard(produto: Produto): HTMLElement {
+function renderProdutoCard(produto: Produto, onSelecionar?: (produto: Produto) => void): HTMLElement {
   const src = fotoProduto(produto.foto_key) || fotoFallback();
   const children: Array<HTMLElement> = [];
   if (src) {
-    children.push(el('img', { src, alt: produto.tipo, loading: 'lazy', width: 130, height: 130 }));
+    const img = el('img', { src, alt: produto.tipo, loading: 'lazy', width: 130, height: 130 });
+    if (onSelecionar) {
+      // A foto vira o gatilho para iniciar o pedido já com o modelo selecionado.
+      const fotoBtn = el(
+        'button',
+        {
+          class: 'produto-card__foto-btn',
+          type: 'button',
+          'aria-label': `Fazer pedido de ${produto.tipo}`,
+          title: `Fazer pedido de ${produto.tipo}`,
+        },
+        [img],
+      ) as HTMLButtonElement;
+      fotoBtn.addEventListener('click', () => onSelecionar(produto));
+      children.push(fotoBtn);
+    } else {
+      children.push(img);
+    }
   }
   children.push(el('div', { class: 'produto-card__nome' }, [produto.tipo]));
   children.push(el('div', { class: 'produto-card__preco' }, [faixaPreco(produto)]));
@@ -97,11 +114,18 @@ function renderTabelaPrecos(config: ConfigData): HTMLElement {
   return el('div', { class: 'tabela-wrap' }, [table]);
 }
 
-export function renderCatalogo(config: ConfigData): HTMLElement {
+export function renderCatalogo(
+  config: ConfigData,
+  onSelecionarProduto?: (produto: Produto) => void,
+): HTMLElement {
   return el('div', { class: 'stack' }, [
     el('section', { class: 'card stack', 'aria-labelledby': 'cat-modelos' }, [
       el('h2', { id: 'cat-modelos' }, ['Modelos disponíveis']),
-      el('div', { class: 'catalogo-grid' }, config.produtos.map(renderProdutoCard)),
+      el(
+        'div',
+        { class: 'catalogo-grid' },
+        config.produtos.map((produto) => renderProdutoCard(produto, onSelecionarProduto)),
+      ),
     ]),
     el('section', { class: 'card stack', 'aria-labelledby': 'cat-cores' }, [
       el('h2', { id: 'cat-cores' }, ['Cores']),

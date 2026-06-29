@@ -19,7 +19,6 @@ const TABS: Array<{ id: ViewId; label: string; icon: string }> = [
   { id: 'catalogo', label: 'Catálogo', icon: '👕' },
   { id: 'pedido', label: 'Fazer pedido', icon: '📝' },
   { id: 'meu-pedido', label: 'Meu pedido', icon: '🧾' },
-  { id: 'painel', label: 'Painel', icon: '🔐' },
 ];
 
 export function renderHeader(props: HeaderProps): HTMLElement {
