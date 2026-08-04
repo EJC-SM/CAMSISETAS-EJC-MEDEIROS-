@@ -3,6 +3,7 @@ import type { ConfigData, Produto } from '../state/types';
 import { el } from '../utils/dom';
 import { formatBRL } from '../utils/format';
 import { getPreco } from '../utils/validation';
+import { renderFotoCarousel, slidesProduto } from './foto-carousel';
 
 function faixaPreco(produto: Produto): string {
   const valores = produto.tamanhos.map((t) => getPreco(produto, t)).filter((v) => v > 0);
@@ -27,12 +28,22 @@ function precoFaixa(produto: Produto, key: string): number {
 }
 
 function renderProdutoCard(produto: Produto, onSelecionar?: (produto: Produto) => void): HTMLElement {
-  const src = fotoProduto(produto.foto_key) || fotoFallback();
+  const fallback = fotoFallback();
+  const slides = slidesProduto(
+    produto.foto_key,
+    produto.foto_key_costas,
+    (key) => {
+      return fotoProduto(key) || fallback;
+    },
+    produto.tipo,
+  );
   const children: Array<HTMLElement> = [];
-  if (src) {
-    const img = el('img', { src, alt: produto.tipo, loading: 'lazy', width: 130, height: 130 });
+  if (slides.length > 0) {
+    const carousel = renderFotoCarousel(slides, {
+      className: 'foto-carousel--card',
+      stopPropagation: Boolean(onSelecionar),
+    });
     if (onSelecionar) {
-      // A foto vira o gatilho para iniciar o pedido já com o modelo selecionado.
       const fotoBtn = el(
         'button',
         {
@@ -41,12 +52,12 @@ function renderProdutoCard(produto: Produto, onSelecionar?: (produto: Produto) =
           'aria-label': `Fazer pedido de ${produto.tipo}`,
           title: `Fazer pedido de ${produto.tipo}`,
         },
-        [img],
+        [carousel],
       ) as HTMLButtonElement;
       fotoBtn.addEventListener('click', () => onSelecionar(produto));
       children.push(fotoBtn);
     } else {
-      children.push(img);
+      children.push(carousel);
     }
   }
   children.push(el('div', { class: 'produto-card__nome' }, [produto.tipo]));

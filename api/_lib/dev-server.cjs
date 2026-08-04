@@ -6,19 +6,33 @@
 const { parse: parseUrl } = require('node:url');
 const { hasFirebaseConfig } = require('./firebase-rest.cjs');
 
-const handlers = {
-  '/api/health': require('../health.js'),
-  '/api/runtime-config': require('../runtime-config.js'),
-  '/api/auth/challenge': require('../auth/challenge.js'),
-  '/api/auth/status': require('../auth/status.js'),
-  '/api/auth/initial-setup': require('../auth/initial-setup.js'),
-  '/api/auth': require('../auth.js'),
-  '/api/pedidos': require('../pedidos.js'),
-  '/api/comprovante': require('../comprovante.js'),
-  '/api/meus-pedidos': require('../meus-pedidos.js'),
-  '/api/config': require('../config.js'),
-  '/api/admin': require('../admin.js'),
+const HANDLER_PATHS = {
+  '/api/health': '../health.js',
+  '/api/runtime-config': '../runtime-config.js',
+  '/api/auth/challenge': '../auth/challenge.js',
+  '/api/auth/status': '../auth/status.js',
+  '/api/auth/initial-setup': '../auth/initial-setup.js',
+  '/api/auth': '../auth.js',
+  '/api/pedidos': '../pedidos.js',
+  '/api/comprovante': '../comprovante.js',
+  '/api/meus-pedidos': '../meus-pedidos.js',
+  '/api/config': '../config.js',
+  '/api/admin': '../admin.js',
 };
+
+function invalidateModule(relativePath) {
+  const abs = require.resolve(relativePath);
+  delete require.cache[abs];
+}
+
+function loadHandler(pathname) {
+  const handlerPath = HANDLER_PATHS[pathname];
+  if (!handlerPath) return null;
+  // Recarrega modulos da API a cada request para refletir edits sem reiniciar o Vite.
+  invalidateModule('./catalogo-defaults.cjs');
+  invalidateModule(handlerPath);
+  return require(handlerPath);
+}
 
 function readBody(req) {
   return new Promise((resolve) => {
@@ -75,7 +89,7 @@ function createDevApiMiddleware() {
     const pathname = url.pathname || '';
     if (!pathname.startsWith('/api/')) return next();
 
-    const handler = handlers[pathname];
+    const handler = loadHandler(pathname);
     if (!handler) {
       res.statusCode = 404;
       res.setHeader('Content-Type', 'application/json; charset=utf-8');

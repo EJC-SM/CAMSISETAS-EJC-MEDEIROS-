@@ -102,6 +102,30 @@ describe('catalogo-defaults', () => {
     expect(produtos[0].precos['P-GG']).toBe(40);
     expect(produtos[0].precos.evil).toBe(100000);
   });
+  it('sanitizeProdutos persiste foto_key_costas e cor_fixa', () => {
+    const produtos = catalogo.sanitizeProdutos([
+      {
+        tipo: 'Camiseta de Maria',
+        foto_key: 'camiseta-maria-frente',
+        foto_key_costas: 'camiseta-maria-costas',
+        cor_fixa: 'Cor única',
+        tamanhos: ['P'],
+        golas: ['Gola V'],
+        precos: { 'P-GG': 45 },
+      },
+    ]);
+    expect(produtos[0].foto_key_costas).toBe('camiseta-maria-costas');
+    expect(produtos[0].cor_fixa).toBe('Cor única');
+  });
+  it('normalizeProdutosList converte objeto indexado do Firebase', () => {
+    const list = catalogo.normalizeProdutosList({
+      '1': { tipo: 'B', tamanhos: ['M'] },
+      '0': { tipo: 'A', tamanhos: ['P'] },
+    });
+    expect(list).toHaveLength(2);
+    expect(list[0].tipo).toBe('A');
+    expect(list[1].tipo).toBe('B');
+  });
   it('sanitizeCores valida hex', () => {
     const cores = catalogo.sanitizeCores([
       { nome: 'Preto', hex: '#111111' },

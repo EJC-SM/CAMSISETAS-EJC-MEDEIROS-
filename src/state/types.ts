@@ -13,6 +13,10 @@ export interface Produto {
   id: string;
   tipo: string;
   foto_key: string;
+  /** Chave da foto das costas em `src/assets/produtos/` (opcional). */
+  foto_key_costas?: string;
+  /** Quando definida, o modelo só aceita esta cor (ex.: "Cor única"). */
+  cor_fixa?: string;
   tamanhos: string[];
   golas: string[];
   precos: Record<string, number>;

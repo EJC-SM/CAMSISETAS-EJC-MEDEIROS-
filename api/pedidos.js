@@ -50,8 +50,13 @@ function validateItens(itens, cfg) {
     if (!produto) throw new Error(`produto inválido: ${produtoRef}`);
     if (!produto.tamanhos.includes(tamanho)) throw new Error(`tamanho inválido para ${produtoRef}`);
     if (!cor) throw new Error('cor é obrigatória');
-    if (coresValidas.size > 0 && !coresValidas.has(cor)) throw new Error(`cor inválida: ${cor}`);
-    if ((produto.cores_excluidas || []).includes(cor)) throw new Error(`cor indisponível para ${produtoRef}`);
+    if (produto.cor_fixa) {
+      if (cor !== produto.cor_fixa) throw new Error(`cor inválida para ${produtoRef}`);
+    } else {
+      if (coresValidas.size > 0 && !coresValidas.has(cor)) throw new Error(`cor inválida: ${cor}`);
+      if ((produto.cores_excluidas || []).includes(cor))
+        throw new Error(`cor indisponível para ${produtoRef}`);
+    }
     if (!Number.isInteger(quantidade) || quantidade < 1 || quantidade > 99) {
       throw new Error('quantidade must be integer between 1 and 99');
     }

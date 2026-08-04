@@ -50,6 +50,12 @@ describe('getPreco', () => {
     expect(getPreco(basica, 'EG')).toBe(45);
     expect(getPreco(basica, 'EGG')).toBe(55);
   });
+  it('aplica preços da Camiseta de Maria', () => {
+    const maria = produtos.find((p) => p.id === 'camiseta-maria')!;
+    expect(getPreco(maria, 'GG')).toBe(45);
+    expect(getPreco(maria, 'EG')).toBe(50);
+    expect(getPreco(maria, 'EGG')).toBe(55);
+  });
 });
 
 describe('validateItemPedido', () => {
@@ -73,6 +79,35 @@ describe('validateItemPedido', () => {
   it('exige gola quando o modelo tem golas reais', () => {
     const res = validateItemPedido(
       { produto: 'Camiseta básica', tamanho: 'M', cor: 'Preto', quantidade: 1 },
+      produtos,
+      cores,
+    );
+    expect(res.valid).toBe(false);
+  });
+  it('aceita cor fixa do modelo Camiseta de Maria', () => {
+    expect(
+      validateItemPedido(
+        {
+          produto: 'Camiseta de Maria',
+          tamanho: 'M',
+          gola: 'Gola V',
+          cor: 'Cor única',
+          quantidade: 1,
+        },
+        produtos,
+        cores,
+      ).valid,
+    ).toBe(true);
+  });
+  it('rejeita cor diferente da cor fixa', () => {
+    const res = validateItemPedido(
+      {
+        produto: 'Camiseta de Maria',
+        tamanho: 'M',
+        gola: 'Gola V',
+        cor: 'Preto',
+        quantidade: 1,
+      },
       produtos,
       cores,
     );

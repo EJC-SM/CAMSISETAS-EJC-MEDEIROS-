@@ -9,6 +9,7 @@ import { formatPhoneBr } from '../utils/security';
 import { toastError, toastSuccess } from '../utils/toast';
 import { getPreco, validateItemPedido, validateNome, validateTelefone } from '../utils/validation';
 import { renderComprovanteUploader } from './comprovante-upload';
+import { renderFotoCarousel, slidesProduto } from './foto-carousel';
 import { openModal } from './modal';
 import { renderPixBox } from './pix-box';
 
@@ -24,6 +25,9 @@ export interface FormPedidoProps {
 
 function coresDisponiveis(produto: Produto | undefined, cores: Cor[]): Cor[] {
   if (!produto) return cores;
+  if (produto.cor_fixa) {
+    return [{ id: 'cor-unica', nome: produto.cor_fixa, hex: '#1B2A6B' }];
+  }
   return cores.filter((c) => !(produto.cores_excluidas || []).includes(c.nome));
 }
 
@@ -133,24 +137,28 @@ export function renderFormPedido(props: FormPedidoProps): HTMLElement {
 
   function renderItemRow(item: DraftItem, index: number): HTMLElement {
     const produto = findProduto(item.produto);
+    if (produto?.cor_fixa) item.cor = produto.cor_fixa;
 
     const produtoSelect = el('select', { class: 'select', 'aria-label': 'Modelo' }, [
       option('', 'Escolha o modelo', !item.produto),
       ...config.produtos.map((p) => option(p.tipo, p.tipo, item.produto === p.tipo)),
     ]) as HTMLSelectElement;
 
-    // Foto grande do modelo selecionado (à esquerda no desktop, topo no mobile).
-    const fotoSrc = produto ? fotoProduto(produto.foto_key) || fotoFallback() : '';
+    // Foto grande do modelo selecionado (carrossel frente/costas quando houver).
+    const fallback = fotoFallback();
+    const slides = produto
+      ? slidesProduto(
+          produto.foto_key,
+          produto.foto_key_costas,
+          (key) => {
+            return fotoProduto(key) || fallback;
+          },
+          produto.tipo,
+        )
+      : [];
     const itemFoto = el('div', { class: 'item-foto', 'aria-hidden': 'true' }, [
-      fotoSrc
-        ? (el('img', {
-            class: 'item-foto__img',
-            src: fotoSrc,
-            alt: '',
-            width: 280,
-            height: 280,
-            loading: 'lazy',
-          }) as HTMLImageElement)
+      slides.length > 0
+        ? renderFotoCarousel(slides, { className: 'foto-carousel--form' })
         : el('span', { class: 'item-foto__placeholder' }, ['👕']),
     ]);
 
@@ -247,6 +255,8 @@ export function renderFormPedido(props: FormPedidoProps): HTMLElement {
       item.tamanho = undefined;
       item.gola = undefined;
       item.cor = undefined;
+      const next = findProduto(item.produto);
+      if (next?.cor_fixa) item.cor = next.cor_fixa;
       rerenderItens();
     });
     golaSelect.addEventListener('change', () => {

@@ -694,3 +694,130 @@ main {
     font-weight: 400;
   }
 }
+
+/* ===== Carrossel de fotos (frente / costas) ===== */
+.foto-carousel {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+}
+
+.foto-carousel--empty {
+  display: grid;
+  place-items: center;
+  background: var(--card);
+}
+
+.foto-carousel__placeholder {
+  font-size: 2.5rem;
+  opacity: 0.45;
+}
+
+.foto-carousel__viewport {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.foto-carousel__track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.28s ease;
+}
+
+.foto-carousel__slide {
+  flex: 0 0 100%;
+  height: 100%;
+}
+
+.foto-carousel__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  background: var(--card);
+}
+
+.foto-carousel__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.foto-carousel__nav--prev {
+  left: 6px;
+}
+
+.foto-carousel__nav--next {
+  right: 6px;
+}
+
+.foto-carousel__nav:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.foto-carousel__dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 8px;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  z-index: 2;
+}
+
+.foto-carousel__dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+}
+
+.foto-carousel__dot--active {
+  background: var(--accent-strong);
+  box-shadow: none;
+}
+
+.foto-carousel--card {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.foto-carousel--card .foto-carousel__img {
+  object-fit: cover;
+}
+
+.produto-card__foto-btn .foto-carousel {
+  margin-bottom: 0;
+}
+
+.foto-carousel--form {
+  width: 100%;
+  height: 100%;
+}
+
+.item-foto .foto-carousel {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+}

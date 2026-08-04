@@ -58,10 +58,16 @@ export function validateItemPedido(
     return { valid: false, message: `Escolha a gola de ${produto.tipo}.` };
   }
   if (!item.cor) return { valid: false, message: `Escolha a cor de ${produto.tipo}.` };
-  const corValida = cores.some((c) => c.nome === item.cor);
-  if (cores.length > 0 && !corValida) return { valid: false, message: 'Cor inválida.' };
-  if ((produto.cores_excluidas || []).includes(item.cor)) {
-    return { valid: false, message: `${item.cor} não está disponível para ${produto.tipo}.` };
+  if (produto.cor_fixa) {
+    if (item.cor !== produto.cor_fixa) {
+      return { valid: false, message: `${produto.tipo} só está disponível em ${produto.cor_fixa}.` };
+    }
+  } else {
+    const corValida = cores.some((c) => c.nome === item.cor);
+    if (cores.length > 0 && !corValida) return { valid: false, message: 'Cor inválida.' };
+    if ((produto.cores_excluidas || []).includes(item.cor)) {
+      return { valid: false, message: `${item.cor} não está disponível para ${produto.tipo}.` };
+    }
   }
   return validateQuantidade(Number(item.quantidade));
 }

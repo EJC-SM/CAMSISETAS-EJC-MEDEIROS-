@@ -32,6 +32,37 @@ function csv(value: string): string[] {
     .filter(Boolean);
 }
 
+function inputVal(root: ParentNode, ariaLabel: string): string {
+  return (root.querySelector(`[aria-label="${ariaLabel}"]`) as HTMLInputElement | null)?.value ?? '';
+}
+
+function syncProdutoFromCard(card: HTMLElement, produto: Produto): void {
+  produto.tipo = inputVal(card, 'Modelo');
+  produto.tamanhos = csv(inputVal(card, 'Tamanhos'));
+  produto.golas = csv(inputVal(card, 'Golas'));
+  produto.precos = textToPrecos(
+    (card.querySelector('[aria-label="Preços"]') as HTMLTextAreaElement | null)?.value ?? '',
+  );
+  produto.cores_excluidas = csv(inputVal(card, 'Cores excluídas'));
+  produto.foto_key = inputVal(card, 'Chave foto frente').trim();
+  const costas = inputVal(card, 'Chave foto costas').trim();
+  produto.foto_key_costas = costas || undefined;
+  const corFixa = inputVal(card, 'Cor fixa').trim();
+  produto.cor_fixa = corFixa || undefined;
+  produto.obs = inputVal(card, 'Observação');
+}
+
+function serializeProdutos(produtos: Produto[]): Produto[] {
+  return produtos.map((p) => {
+    const out: Produto = { ...p, precos: { ...p.precos } };
+    if (out.foto_key_costas?.trim()) out.foto_key_costas = out.foto_key_costas.trim();
+    else delete out.foto_key_costas;
+    if (out.cor_fixa?.trim()) out.cor_fixa = out.cor_fixa.trim();
+    else delete out.cor_fixa;
+    return out;
+  });
+}
+
 export function renderPainelDirigente(props: PainelDirigenteProps): HTMLElement {
   const { etapa } = props;
   const container = el('div', { class: 'stack' });
@@ -176,13 +207,31 @@ export function renderPainelDirigente(props: PainelDirigenteProps): HTMLElement 
         ]) as HTMLTextAreaElement;
         const excl = el('input', {
           class: 'input',
-          value: produto.cores_excluidas.join(', '),
+          value: produto?.cores_excluidas?.join(', ') ?? '',
           'aria-label': 'Cores excluídas',
         }) as HTMLInputElement;
         const obs = el('input', {
           class: 'input',
           value: produto.obs,
           'aria-label': 'Observação',
+        }) as HTMLInputElement;
+        const fotoKey = el('input', {
+          class: 'input',
+          value: produto.foto_key,
+          'aria-label': 'Chave foto frente',
+          placeholder: 'ex.: camiseta-maria-frente',
+        }) as HTMLInputElement;
+        const fotoCostas = el('input', {
+          class: 'input',
+          value: produto.foto_key_costas ?? '',
+          'aria-label': 'Chave foto costas',
+          placeholder: 'opcional',
+        }) as HTMLInputElement;
+        const corFixa = el('input', {
+          class: 'input',
+          value: produto.cor_fixa ?? '',
+          'aria-label': 'Cor fixa',
+          placeholder: 'ex.: Cor única (opcional)',
         }) as HTMLInputElement;
 
         tipo.addEventListener('input', () => {
@@ -203,6 +252,15 @@ export function renderPainelDirigente(props: PainelDirigenteProps): HTMLElement 
         obs.addEventListener('input', () => {
           produto.obs = obs.value;
         });
+        fotoKey.addEventListener('input', () => {
+          produto.foto_key = fotoKey.value;
+        });
+        fotoCostas.addEventListener('input', () => {
+          produto.foto_key_costas = fotoCostas.value || undefined;
+        });
+        corFixa.addEventListener('input', () => {
+          produto.cor_fixa = corFixa.value || undefined;
+        });
 
         const remove = el('button', { class: 'btn btn--ghost btn--sm', type: 'button' }, ['Remover modelo']);
         remove.addEventListener('click', () => {
@@ -220,6 +278,18 @@ export function renderPainelDirigente(props: PainelDirigenteProps): HTMLElement 
               precos,
             ]),
             el('div', { class: 'field' }, [el('label', {}, ['Cores excluídas (vírgula)']), excl]),
+            el('div', { class: 'field' }, [
+              el('label', {}, ['Chave foto frente (arquivo em assets/produtos, sem extensão)']),
+              fotoKey,
+            ]),
+            el('div', { class: 'field' }, [
+              el('label', {}, ['Chave foto costas (opcional — ativa carrossel)']),
+              fotoCostas,
+            ]),
+            el('div', { class: 'field' }, [
+              el('label', {}, ['Cor fixa (opcional — ex.: Cor única)']),
+              corFixa,
+            ]),
             el('div', { class: 'field' }, [el('label', {}, ['Observação']), obs]),
             remove,
           ]),
@@ -243,7 +313,12 @@ export function renderPainelDirigente(props: PainelDirigenteProps): HTMLElement 
       renderList();
     });
     const saveBtn = el('button', { class: 'btn btn--sm', type: 'button' }, ['Salvar modelos']);
-    saveBtn.addEventListener('click', () => void save({ produtos }, 'Modelos salvos.'));
+    saveBtn.addEventListener('click', () => {
+      list.querySelectorAll('.item-pedido').forEach((card, index) => {
+        syncProdutoFromCard(card as HTMLElement, produtos[index]);
+      });
+      void save({ produtos: serializeProdutos(produtos) }, 'Modelos salvos.');
+    });
 
     return el('section', { class: 'card stack' }, [
       el('h3', {}, ['Modelos / catálogo']),

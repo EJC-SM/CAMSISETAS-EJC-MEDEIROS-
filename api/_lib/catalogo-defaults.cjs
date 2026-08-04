@@ -110,6 +110,18 @@ const PRODUTOS_DEFAULT = [
     cores_excluidas: [],
     obs: 'Cores reduzidas',
   },
+  {
+    id: 'camiseta-maria',
+    tipo: 'Camiseta de Maria',
+    foto_key: 'camiseta-maria-frente',
+    foto_key_costas: 'camiseta-maria-costas',
+    cor_fixa: 'Cor única',
+    tamanhos: ['P', 'M', 'G', 'GG', 'EG', 'EGG'],
+    golas: ['Gola V', 'Gola Careca'],
+    precos: { 'P-GG': 45, EG: 50, EGG: 55 },
+    cores_excluidas: [],
+    obs: '',
+  },
 ];
 
 const EQUIPES1_DEFAULT = [
@@ -193,19 +205,41 @@ function sanitizeStringList(list, maxLen, maxItems) {
     .slice(0, maxItems);
 }
 
+// Firebase as vezes devolve arrays como objetos indexados ("0", "1", ...).
+function normalizeProdutosList(produtos) {
+  if (Array.isArray(produtos)) return produtos;
+  if (produtos && typeof produtos === 'object') {
+    return Object.keys(produtos)
+      .filter((key) => /^\d+$/.test(key))
+      .sort((a, b) => Number(a) - Number(b))
+      .map((key) => produtos[key])
+      .filter((item) => item && typeof item === 'object');
+  }
+  return [];
+}
+
 function sanitizeProdutos(produtos) {
-  if (!Array.isArray(produtos)) return [];
-  return produtos
-    .map((p) => ({
-      id: sanitizeText(p?.id, 40) || sanitizeText(p?.tipo, 40).toLowerCase().replace(/\s+/g, '-'),
-      tipo: sanitizeText(p?.tipo, 80),
-      foto_key: sanitizeText(p?.foto_key, 60),
-      tamanhos: sanitizeStringList(p?.tamanhos, 10, 30),
-      golas: sanitizeStringList(p?.golas, 30, 10),
-      precos: sanitizePrecos(p?.precos),
-      cores_excluidas: sanitizeStringList(p?.cores_excluidas, 40, 40),
-      obs: sanitizeText(p?.obs, 120),
-    }))
+  const list = normalizeProdutosList(produtos);
+  if (!list.length && !Array.isArray(produtos)) return [];
+  const source = list.length ? list : Array.isArray(produtos) ? produtos : [];
+  return source
+    .map((p) => {
+      const item = {
+        id: sanitizeText(p?.id, 40) || sanitizeText(p?.tipo, 40).toLowerCase().replace(/\s+/g, '-'),
+        tipo: sanitizeText(p?.tipo, 80),
+        foto_key: sanitizeText(p?.foto_key, 60),
+        tamanhos: sanitizeStringList(p?.tamanhos, 10, 30),
+        golas: sanitizeStringList(p?.golas, 30, 10),
+        precos: sanitizePrecos(p?.precos),
+        cores_excluidas: sanitizeStringList(p?.cores_excluidas, 40, 40),
+        obs: sanitizeText(p?.obs, 120),
+      };
+      const fotoCostas = sanitizeText(p?.foto_key_costas, 60);
+      if (fotoCostas) item.foto_key_costas = fotoCostas;
+      const corFixa = sanitizeText(p?.cor_fixa, 40);
+      if (corFixa) item.cor_fixa = corFixa;
+      return item;
+    })
     .filter((p) => p.tipo && p.tamanhos.length > 0)
     .slice(0, 60);
 }
@@ -232,9 +266,10 @@ function sanitizeCores(cores) {
 // garantindo catalogo utilizavel mesmo logo apos o setup inicial.
 function withDefaults(cfg) {
   const source = cfg && typeof cfg === 'object' ? cfg : {};
+  const produtos = normalizeProdutosList(source.produtos);
   return {
     ...source,
-    produtos: source.produtos?.length ? source.produtos : PRODUTOS_DEFAULT.map((p) => ({ ...p })),
+    produtos: produtos.length ? produtos : PRODUTOS_DEFAULT.map((p) => ({ ...p })),
     cores: source.cores?.length ? source.cores : CORES_DEFAULT.map((c) => ({ ...c })),
     equipes1: source.equipes1?.length ? source.equipes1 : [...EQUIPES1_DEFAULT],
     equipes2: source.equipes2?.length ? source.equipes2 : [...EQUIPES2_DEFAULT],
@@ -269,7 +304,7 @@ function buildConfigPayload(cfg, etapa) {
 
 // Aplica no objeto `cfg` apenas os campos presentes em `body` (ja com checagem de papel feita fora).
 function applyConfigUpdate(cfg, body, etapa) {
-  if (Array.isArray(body?.produtos)) cfg.produtos = sanitizeProdutos(body.produtos);
+  if (body?.produtos != null) cfg.produtos = sanitizeProdutos(body.produtos);
   if (Array.isArray(body?.cores)) cfg.cores = sanitizeCores(body.cores);
   if (Array.isArray(body?.equipes)) {
     cfg[`equipes${etapa}`] = sanitizeStringList(body.equipes, 60, 60);
@@ -297,6 +332,7 @@ module.exports = {
   PIX_DEFAULT,
   defaultConfig,
   withDefaults,
+  normalizeProdutosList,
   sanitizeProdutos,
   sanitizeCores,
   buildConfigPayload,

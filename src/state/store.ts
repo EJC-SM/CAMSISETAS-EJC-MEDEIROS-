@@ -101,6 +101,18 @@ export const PRODUTOS_DEFAULT: Produto[] = [
     cores_excluidas: [],
     obs: 'Cores reduzidas',
   },
+  {
+    id: 'camiseta-maria',
+    tipo: 'Camiseta de Maria',
+    foto_key: 'camiseta-maria-frente',
+    foto_key_costas: 'camiseta-maria-costas',
+    cor_fixa: 'Cor única',
+    tamanhos: ['P', 'M', 'G', 'GG', 'EG', 'EGG'],
+    golas: ['Gola V', 'Gola Careca'],
+    precos: { 'P-GG': 45, EG: 50, EGG: 55 },
+    cores_excluidas: [],
+    obs: '',
+  },
 ];
 
 export const EQUIPES_DEFAULT: Record<Etapa, string[]> = {

@@ -32,6 +32,10 @@ export default defineConfig(({ mode }) => {
       target: 'es2020',
       sourcemap: false,
     },
+    server: {
+      // Evita subir em outra porta com API desatualizada enquanto um `npm run dev` antigo ainda ocupa a 5173.
+      strictPort: true,
+    },
     plugins: [
       {
         name: 'ejc-local-api',
