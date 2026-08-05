@@ -122,6 +122,18 @@ const PRODUTOS_DEFAULT = [
     cores_excluidas: [],
     obs: '',
   },
+  {
+    id: 'moletom-careca-maria',
+    tipo: 'Moletom careca de Maria',
+    foto_key: 'moletom-careca-maria-frente',
+    foto_key_costas: 'moletom-careca-maria-costas',
+    cor_fixa: 'Cor única',
+    tamanhos: ['P', 'M', 'G', 'GG', 'XG'],
+    golas: ['—'],
+    precos: { 'P-GG': 0, XG: 0 },
+    cores_excluidas: [],
+    obs: '',
+  },
 ];
 
 const EQUIPES1_DEFAULT = [
