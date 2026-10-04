@@ -126,6 +126,14 @@ describe('catalogo-defaults', () => {
     expect(list[0].tipo).toBe('A');
     expect(list[1].tipo).toBe('B');
   });
+  it('normalizeProdutosList descarta buracos nulos deixados ao apagar um item', () => {
+    const list = catalogo.normalizeProdutosList([
+      { tipo: 'A', tamanhos: ['P'] },
+      null,
+      { tipo: 'B', tamanhos: ['M'] },
+    ]);
+    expect(list.map((produto: { tipo: string }) => produto.tipo)).toEqual(['A', 'B']);
+  });
   it('sanitizeCores valida hex', () => {
     const cores = catalogo.sanitizeCores([
       { nome: 'Preto', hex: '#111111' },

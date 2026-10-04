@@ -219,7 +219,7 @@ export function renderPainelDirigente(props: PainelDirigenteProps): HTMLElement 
           class: 'input',
           value: produto.foto_key,
           'aria-label': 'Chave foto frente',
-          placeholder: 'ex.: camiseta-maria-frente',
+          placeholder: 'ex.: camiseta-basica',
         }) as HTMLInputElement;
         const fotoCostas = el('input', {
           class: 'input',

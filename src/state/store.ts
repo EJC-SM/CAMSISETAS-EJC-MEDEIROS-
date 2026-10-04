@@ -217,7 +217,10 @@ export function getConfig(etapa: Etapa = state.etapa): ConfigData {
 }
 
 export function setConfig(etapa: Etapa, config: ConfigData): void {
-  state.config[etapa] = config;
+  state.config[etapa] = {
+    ...config,
+    produtos: (config.produtos ?? []).filter((produto) => Boolean(produto?.tipo)),
+  };
 }
 
 export function getEtapaLocked(): 0 | Etapa {

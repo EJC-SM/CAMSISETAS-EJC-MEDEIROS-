@@ -217,15 +217,20 @@ function sanitizeStringList(list, maxLen, maxItems) {
     .slice(0, maxItems);
 }
 
-// Firebase as vezes devolve arrays como objetos indexados ("0", "1", ...).
+function isProdutoRecord(item) {
+  return Boolean(item) && typeof item === 'object';
+}
+
+// Firebase as vezes devolve arrays como objetos indexados ("0", "1", ...)
+// e deixa null no lugar de um item apagado.
 function normalizeProdutosList(produtos) {
-  if (Array.isArray(produtos)) return produtos;
+  if (Array.isArray(produtos)) return produtos.filter(isProdutoRecord);
   if (produtos && typeof produtos === 'object') {
     return Object.keys(produtos)
       .filter((key) => /^\d+$/.test(key))
       .sort((a, b) => Number(a) - Number(b))
       .map((key) => produtos[key])
-      .filter((item) => item && typeof item === 'object');
+      .filter(isProdutoRecord);
   }
   return [];
 }
